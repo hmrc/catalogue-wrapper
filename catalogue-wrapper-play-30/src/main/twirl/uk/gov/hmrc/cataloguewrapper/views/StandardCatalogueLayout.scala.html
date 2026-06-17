@@ -1,0 +1,65 @@
+@*
+ * Copyright 2026 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *@
+
+@import uk.gov.hmrc.cataloguewrapper.models.BannerMenu
+
+@this(
+    menuBar: uk.gov.hmrc.cataloguewrapper.views.html.CatalogueMenuBar.type,
+    catalogueStylesheets: uk.gov.hmrc.cataloguewrapper.views.html.CatalogueStylesheets,
+    catalogueScripts: uk.gov.hmrc.cataloguewrapper.views.html.CatalogueScripts
+)
+
+@(
+    menu: BannerMenu,
+    content: play.twirl.api.HtmlFormat.Appendable,
+    pageTitle: Option[String] = None,
+    activeItemId: Option[String] = None,
+    quickSearchUrl: String,
+    showSignOut: Boolean = true,
+    signOutUrl: Option[String] = None,
+    scripts: Seq[play.twirl.api.HtmlFormat.Appendable] = Seq.empty,
+    stylesheets: Seq[play.twirl.api.HtmlFormat.Appendable] = Seq.empty,
+    fullWidth: Boolean = true
+)(implicit request: RequestHeader, messages: Messages)
+
+@defining(if (fullWidth) "container-fluid" else "container") { containerClass =>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>MDTP - @pageTitle.getOrElse("Catalogue")</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    @catalogueStylesheets()
+    @for(stylesheet <- stylesheets) {
+      @stylesheet
+    }
+  </head>
+  <body>
+    @menuBar(menu, activeItemId, quickSearchUrl, showSignOut, signOutUrl)
+    <main>
+      <div id="standard-layout-container">
+        <section class="@containerClass mt-4">
+          @content
+        </section>
+      </div>
+    </main>
+    @catalogueScripts()
+    @for(script <- scripts) {
+      @script
+    }
+  </body>
+</html>
+}

@@ -1,0 +1,109 @@
+/*
+ * Catalogue Wrapper — layout and search styles
+ * Navbar, search bar, and search-results dropdown only.
+ * Page-content styles (tables, filters, etc.) belong in the consuming service.
+ */
+
+/* ── Navbar ────────────────────────────────────────────────────────────────── */
+.navbar-brand {
+  font-weight: 600;
+}
+
+.nav-link.active {
+  font-weight: 600;
+  border-bottom: 2px solid #fff;
+}
+
+/* ── Search — initial state ──────────────────────────────────────────────── */
+.search-width-initial {
+  width: 0;
+  overflow: hidden;
+  transition: width 0.3s ease;
+}
+
+.search-width-initial input {
+  display: none;
+}
+
+/* ── Search — expanded state ─────────────────────────────────────────────── */
+.search-width {
+  width: 300px;
+  transition: width 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  .search-width {
+    width: 100%;
+  }
+}
+
+/* ── Search — small-screen toggle ───────────────────────────────────────── */
+.hidden-for-small-screens {
+  display: none !important;
+}
+
+@media (min-width: 768px) {
+  .hidden-for-small-screens {
+    display: flex !important;
+  }
+}
+
+/* ── Search results dropdown ─────────────────────────────────────────────── */
+.navbar-search-matches-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1050;
+  background-color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 0.25rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.175);
+  max-height: 400px;
+  overflow-y: auto;
+  color: #212529;
+}
+
+.navbar-search-matches-dropdown table {
+  margin-bottom: 0;
+}
+
+.navbar-search-matches-dropdown td {
+  padding: 0.4rem 0.75rem;
+  border-top: 1px solid #dee2e6;
+  vertical-align: middle;
+}
+
+.navbar-search-matches-dropdown td:first-child {
+  width: 70%;
+}
+
+.navbar-search-matches-dropdown a {
+  color: #0d6efd;
+  text-decoration: none;
+}
+
+.navbar-search-matches-dropdown a:hover {
+  text-decoration: underline;
+}
+
+/* ── Selected result row ─────────────────────────────────────────────────── */
+.search-match-selected {
+  background-color: #e9ecef;
+}
+
+.search-match-selected a {
+  color: #0a58ca;
+}
+
+/* ── Link-type badge ─────────────────────────────────────────────────────── */
+.search-item-type {
+  font-size: 0.75rem;
+  color: #6c757d;
+  text-transform: capitalize;
+}
+
+/* ── Main content container ──────────────────────────────────────────────── */
+#standard-layout-container {
+  min-height: calc(100vh - 60px);
+}
