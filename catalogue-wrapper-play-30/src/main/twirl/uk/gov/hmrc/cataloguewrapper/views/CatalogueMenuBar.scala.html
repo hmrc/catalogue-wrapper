@@ -121,11 +121,11 @@ signOutUrl: Option[String] = None
           </a>
         </li>
         @if(showSignOut) {
-          <li class="nav-item">
-            <a class="nav-link" href="@signOutUrl.getOrElse("#")">
-              Sign out
-            </a>
-          </li>
+        <li class="nav-item">
+          <a class="nav-link" href="@signOutUrl.getOrElse("#")">
+            Sign out
+          </a>
+        </li>
         }
       </ul>
     </div>
