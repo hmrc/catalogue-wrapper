@@ -24,6 +24,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
+import uk.gov.hmrc.cataloguewrapper.config.CatalogueWrapperConfig
 import uk.gov.hmrc.cataloguewrapper.connectors.CatalogueMenuConnector
 import uk.gov.hmrc.cataloguewrapper.models.SearchTerm
 import uk.gov.hmrc.http.HeaderCarrier
@@ -34,21 +35,35 @@ import scala.concurrent.Future
 class QuickSearchControllerSpec extends AnyWordSpec with Matchers with MockitoSugar:
 
   private val mockConnector = mock[CatalogueMenuConnector]
+  private val mockConfig    = mock[CatalogueWrapperConfig]
+
+  when(mockConfig.quickSearchLimit).thenReturn(20)
 
   private val controller = new QuickSearchController(
     stubMessagesControllerComponents(),
-    mockConnector
+    mockConnector,
+    mockConfig
   )
 
   "search" should {
-    "return OK with JSON results" in {
+    "return OK with JSON results using the provided limit" in {
       val results = Seq(SearchTerm("service", "foo", "/services/foo"))
-      when(mockConnector.search(eqTo("foo"), eqTo(20))(any[HeaderCarrier]))
+      when(mockConnector.search(eqTo("foo"), eqTo(10))(any[HeaderCarrier]))
         .thenReturn(Future.successful(results))
 
-      val result = controller.search("foo", 20)(FakeRequest())
+      val result = controller.search("foo", Some(10))(FakeRequest())
       status(result) shouldBe OK
       contentType(result) shouldBe Some("application/json")
+      contentAsJson(result) shouldBe Json.toJson(results)
+    }
+
+    "use config.quickSearchLimit when no limit is provided" in {
+      val results = Seq(SearchTerm("service", "bar", "/services/bar"))
+      when(mockConnector.search(eqTo("bar"), eqTo(20))(any[HeaderCarrier]))
+        .thenReturn(Future.successful(results))
+
+      val result = controller.search("bar", None)(FakeRequest())
+      status(result) shouldBe OK
       contentAsJson(result) shouldBe Json.toJson(results)
     }
 
@@ -56,7 +71,7 @@ class QuickSearchControllerSpec extends AnyWordSpec with Matchers with MockitoSu
       when(mockConnector.search(any[String], any[Int])(any[HeaderCarrier]))
         .thenReturn(Future.successful(Seq.empty))
 
-      val result = controller.search("zzz", 20)(FakeRequest())
+      val result = controller.search("zzz", None)(FakeRequest())
       status(result) shouldBe OK
       contentAsJson(result) shouldBe Json.arr()
     }

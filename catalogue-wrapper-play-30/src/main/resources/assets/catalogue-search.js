@@ -16,6 +16,7 @@
   const minSearchLen = 3;
 
   let selectedItem = 0;
+  let resultCount  = 0;
   let debounceTimer;
 
   function escapeHtml(value) {
@@ -73,11 +74,18 @@
 
       const xhr = new XMLHttpRequest();
       xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4 && xhr.status === 200) {
+        if (xhr.readyState !== 4) return;
+        if (xhr.status === 200) {
           const results = JSON.parse(xhr.responseText);
           matches.innerHTML = renderResults(results);
+          resultCount  = results.length;
           selectedItem = 0;
           highlight(0);
+        } else {
+          matches.innerHTML =
+            '<table style="width:100%"><tbody class="catalogue-search-matches-body">' +
+            "<tr><td>Search unavailable</td></tr></tbody></table>";
+          resultCount = 0;
         }
       };
       xhr.open("GET", url.toString());
@@ -110,6 +118,7 @@
     if (mainmenu) mainmenu.classList.remove("d-none");
     input.value = "";
     selectedItem = -1;
+    resultCount  = 0;
     matches.innerHTML = "";
   }
 
@@ -147,9 +156,11 @@
         highlight(selectedItem);
       }
     } else if (e.keyCode === 40) {
-      unhighlight(selectedItem);
-      selectedItem++;
-      highlight(selectedItem);
+      if (selectedItem < resultCount - 1) {
+        unhighlight(selectedItem);
+        selectedItem++;
+        highlight(selectedItem);
+      }
     } else if (e.keyCode === 27) {
       hideSearchBar();
     } else if (e.keyCode > 40 || e.keyCode < 33) {

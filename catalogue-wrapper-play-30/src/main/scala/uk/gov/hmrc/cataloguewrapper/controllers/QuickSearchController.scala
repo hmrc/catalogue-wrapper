@@ -18,6 +18,7 @@ package uk.gov.hmrc.cataloguewrapper.controllers
 
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
+import uk.gov.hmrc.cataloguewrapper.config.CatalogueWrapperConfig
 import uk.gov.hmrc.cataloguewrapper.connectors.CatalogueMenuConnector
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
@@ -26,17 +27,23 @@ import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
+// TODO: When menu-bar-backend becomes user/admin-aware, decide whether this proxy
+// should enforce consuming-service auth or simply forward session/header context.
+// Option A: remain unauthenticated, forward headers, let menu-bar-backend decide.
+// Option B: consuming service owns the route and wraps it in its own IdentifierAction.
+// Option C: wrapper exposes an injected action-builder hook.
 @Singleton
 class QuickSearchController @Inject() (
     val controllerComponents: MessagesControllerComponents,
-    connector: CatalogueMenuConnector
+    connector: CatalogueMenuConnector,
+    config: CatalogueWrapperConfig
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController:
 
-  def search(query: String, limit: Int = 20): Action[AnyContent] =
+  def search(query: String, limit: Option[Int]): Action[AnyContent] =
     Action.async { implicit request =>
       given HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
       connector
-        .search(query, limit)
+        .search(query, limit.getOrElse(config.quickSearchLimit))
         .map(results => Ok(Json.toJson(results)))
     }

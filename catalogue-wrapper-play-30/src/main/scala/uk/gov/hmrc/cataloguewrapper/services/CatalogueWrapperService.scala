@@ -23,6 +23,7 @@ import uk.gov.hmrc.cataloguewrapper.config.CatalogueWrapperConfig
 import uk.gov.hmrc.cataloguewrapper.connectors.CatalogueMenuConnector
 import uk.gov.hmrc.cataloguewrapper.models.BannerMenu
 import uk.gov.hmrc.cataloguewrapper.views.html.StandardCatalogueLayout
+import uk.gov.hmrc.cataloguewrapper.views.html.{CatalogueMenuBar => CatalogueMenuBarView}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import javax.inject.{Inject, Singleton}
@@ -91,4 +92,44 @@ class CatalogueWrapperService @Inject() (
       scripts = scripts,
       stylesheets = stylesheets,
       fullWidth = fullWidth
+    )
+
+  /** Fetch the menu and render only the navbar/search bar. Use this when you want to embed the menu bar into an
+    * existing layout rather than replacing the whole page shell.
+    */
+  def catalogueMenuBar(
+      activeItemId: Option[String] = None,
+      showSignOut: Boolean = true,
+      signOutUrl: Option[String] = None
+  )(implicit
+      hc: HeaderCarrier,
+      request: RequestHeader,
+      messages: Messages
+  ): Future[HtmlFormat.Appendable] =
+    connector.getMenu().map { menu =>
+      CatalogueMenuBarView(
+        menu = menu,
+        activeItemId = activeItemId,
+        quickSearchUrl = config.quickSearchPath,
+        showSignOut = showSignOut,
+        signOutUrl = signOutUrl
+      )
+    }
+
+  /** Render only the navbar/search bar with an already-fetched menu. */
+  def catalogueMenuBarWithMenu(
+      menu: BannerMenu,
+      activeItemId: Option[String] = None,
+      showSignOut: Boolean = true,
+      signOutUrl: Option[String] = None
+  )(implicit
+      request: RequestHeader,
+      messages: Messages
+  ): HtmlFormat.Appendable =
+    CatalogueMenuBarView(
+      menu = menu,
+      activeItemId = activeItemId,
+      quickSearchUrl = config.quickSearchPath,
+      showSignOut = showSignOut,
+      signOutUrl = signOutUrl
     )

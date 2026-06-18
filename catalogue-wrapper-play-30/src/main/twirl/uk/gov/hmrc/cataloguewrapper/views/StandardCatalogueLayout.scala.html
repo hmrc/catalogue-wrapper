@@ -17,7 +17,6 @@
 @import uk.gov.hmrc.cataloguewrapper.models.BannerMenu
 
 @this(
-    menuBar: uk.gov.hmrc.cataloguewrapper.views.html.CatalogueMenuBar.type,
     catalogueStylesheets: uk.gov.hmrc.cataloguewrapper.views.html.CatalogueStylesheets,
     catalogueScripts: uk.gov.hmrc.cataloguewrapper.views.html.CatalogueScripts
 )
@@ -48,7 +47,7 @@
     }
   </head>
   <body>
-    @menuBar(menu, activeItemId, quickSearchUrl, showSignOut, signOutUrl)
+    @uk.gov.hmrc.cataloguewrapper.views.html.CatalogueMenuBar(menu, activeItemId, quickSearchUrl, showSignOut, signOutUrl)
     <main>
       <div id="standard-layout-container">
         <section class="@containerClass mt-4">

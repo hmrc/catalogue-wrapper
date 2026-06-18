@@ -30,12 +30,7 @@ import play.twirl.api.Html
 import uk.gov.hmrc.cataloguewrapper.config.CatalogueWrapperConfig
 import uk.gov.hmrc.cataloguewrapper.connectors.CatalogueMenuConnector
 import uk.gov.hmrc.cataloguewrapper.models.{BannerMenu, MenuLink}
-import uk.gov.hmrc.cataloguewrapper.views.html.{
-  CatalogueMenuBar,
-  CatalogueScripts,
-  CatalogueStylesheets,
-  StandardCatalogueLayout
-}
+import uk.gov.hmrc.cataloguewrapper.views.html.{CatalogueScripts, CatalogueStylesheets, StandardCatalogueLayout}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -47,7 +42,6 @@ class CatalogueWrapperServiceSpec extends AnyWordSpec with Matchers with Mockito
   private val mockConfig    = mock[CatalogueWrapperConfig]
 
   private val layout = new StandardCatalogueLayout(
-    CatalogueMenuBar,
     new CatalogueStylesheets(mockConfig),
     new CatalogueScripts(mockConfig)
   )
@@ -89,6 +83,31 @@ class CatalogueWrapperServiceSpec extends AnyWordSpec with Matchers with Mockito
         .standardCatalogueLayout(Html("<p>content</p>"), Some("Test Page"))
         .failed
         .futureValue shouldBe a[RuntimeException]
+    }
+  }
+
+  "catalogueMenuBar" should {
+    "fetch menu from connector and render only the navbar" in {
+      when(mockConnector.getMenu()(any[HeaderCarrier]))
+        .thenReturn(Future.successful(sampleMenu))
+      when(mockConfig.quickSearchPath)
+        .thenReturn("/catalogue-wrapper/quicksearch")
+
+      val result = service.catalogueMenuBar(activeItemId = Some("repos")).futureValue
+      result.body should include("MDTP")
+      result.body should include("/catalogue-wrapper/quicksearch")
+      result.body should not include "<html"
+    }
+  }
+
+  "catalogueMenuBarWithMenu" should {
+    "render only the navbar synchronously with supplied menu" in {
+      when(mockConfig.quickSearchPath)
+        .thenReturn("/catalogue-wrapper/quicksearch")
+
+      val result = service.catalogueMenuBarWithMenu(sampleMenu, activeItemId = Some("repos"))
+      result.body should include("MDTP")
+      result.body should not include "<html"
     }
   }
 
