@@ -36,7 +36,7 @@ class CatalogueWrapperService @Inject() (
     standardLayout: StandardCatalogueLayout
 )(implicit ec: ExecutionContext):
 
-  /** Fetch the menu from menu-bar-backend and render the full page layout. */
+  /** Fetch the menu from catalogue-navigation and render the full page layout. */
   def standardCatalogueLayout(
       content: HtmlFormat.Appendable,
       pageTitle: Option[String] = None,

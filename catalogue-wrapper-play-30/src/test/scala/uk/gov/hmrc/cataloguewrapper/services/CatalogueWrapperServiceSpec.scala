@@ -75,7 +75,7 @@ class CatalogueWrapperServiceSpec extends AnyWordSpec with Matchers with Mockito
 
     "fail the future if connector fails" in {
       when(mockConnector.getMenu()(any[HeaderCarrier]))
-        .thenReturn(Future.failed(RuntimeException("menu-bar-backend unavailable")))
+        .thenReturn(Future.failed(RuntimeException("catalogue-navigation unavailable")))
       when(mockConfig.quickSearchPath)
         .thenReturn("/catalogue-wrapper/quicksearch")
 

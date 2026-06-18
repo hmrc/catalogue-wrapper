@@ -27,9 +27,9 @@ import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-// TODO: When menu-bar-backend becomes user/admin-aware, decide whether this proxy
+// TODO: When catalogue-navigation becomes user/admin-aware, decide whether this proxy
 // should enforce consuming-service auth or simply forward session/header context.
-// Option A: remain unauthenticated, forward headers, let menu-bar-backend decide.
+// Option A: remain unauthenticated, forward headers, let catalogue-navigation decide.
 //    - It will be this but the frontend will be authenticated and the backend will also validate that authentication
 //    - passed through HeaderCarrier as session cookies
 // Option B: consuming service owns the route and wraps it in its own IdentifierAction.

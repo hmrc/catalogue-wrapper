@@ -7,18 +7,18 @@ A Scala 3 / Play 3.0 **library** that provides a reusable Catalogue/MDTP-styled 
 `catalogue-wrapper-play-30` gives consuming Play frontends:
 
 - A full-page Bootstrap navbar with dynamic menu links
-- An integrated quicksearch bar backed by `menu-bar-backend`
+- An integrated quicksearch bar backed by `catalogue-navigation`
 - Packaged CSS and JavaScript assets (Bootstrap 5.3, Bootstrap Icons, search JS)
 - A single injected service (`CatalogueWrapperService`) that fetches the menu and returns ready-to-render HTML
 
 Consuming services do **not** need to copy `search.js`, navbar CSS, or menu models.
 
-## Relationship to `menu-bar-backend`
+## Relationship to `catalogue-navigation`
 
 `catalogue-wrapper` is the **rendering** library.  
-`menu-bar-backend` is the **data** service (menu structure and search index).
+`catalogue-navigation` is the **data** service (menu structure and search index).
 
-The wrapper calls `menu-bar-backend` via HTTP. It does not rebuild the search index or know about upstream Catalogue services.
+The wrapper calls `catalogue-navigation` via HTTP. It does not rebuild the search index or know about upstream Catalogue services.
 
 ## Adding the dependency
 
@@ -41,7 +41,7 @@ In your service's `conf/app.routes` (or equivalent):
 ```
 
 This mounts:
-- `GET /catalogue-wrapper/quicksearch` — proxies search to `menu-bar-backend`
+- `GET /catalogue-wrapper/quicksearch` — proxies search to `catalogue-navigation`
 - `GET /catalogue-wrapper/assets/*file` — serves wrapper CSS/JS assets
 
 ## Using `CatalogueWrapperService`
