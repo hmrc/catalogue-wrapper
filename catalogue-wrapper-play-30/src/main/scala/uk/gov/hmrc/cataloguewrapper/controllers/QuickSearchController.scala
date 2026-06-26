@@ -21,21 +21,25 @@ import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.cataloguewrapper.config.CatalogueWrapperConfig
 import uk.gov.hmrc.cataloguewrapper.models.SearchTerm
 import uk.gov.hmrc.cataloguewrapper.search.SearchIndex
+import uk.gov.hmrc.cataloguewrapper.services.CatalogueNavigationCache
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class QuickSearchController @Inject() (
     val controllerComponents: MessagesControllerComponents,
     searchIndex: SearchIndex,
+    navigationCache: CatalogueNavigationCache,
     config: CatalogueWrapperConfig
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController:
 
   def search(query: String, limit: Option[Int]): Action[AnyContent] =
-    Action {
+    Action.async { implicit request =>
       val queryTerms =
         query.trim
           .split("\\s+")
@@ -44,9 +48,17 @@ class QuickSearchController @Inject() (
           .filter(_.length >= config.quickSearchMinTermLength)
           .take(config.quickSearchMaxTerms)
 
-      val results =
-        if queryTerms.isEmpty then Seq.empty
-        else searchIndex.search(queryTerms).take(limit.getOrElse(config.quickSearchLimit))
+      if queryTerms.isEmpty then Future.successful(Ok(Json.arr()))
+      else
+        val searchNow =
+          () => searchIndex.search(queryTerms).take(limit.getOrElse(config.quickSearchLimit))
 
-      Ok(Json.toJson(results))
+        val resultsF =
+          if searchIndex.isPopulated then Future.successful(searchNow())
+          else
+            given HeaderCarrier =
+              HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+            navigationCache.refreshOrCached().map(_ => searchNow())
+
+        resultsF.map(results => Ok(Json.toJson(results)))
     }

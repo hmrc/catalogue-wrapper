@@ -33,6 +33,9 @@ class SearchIndex:
   def search(queryTerms: Seq[String]): Seq[SearchTerm] =
     SearchIndex.search(queryTerms, cachedIndex.get())
 
+  def isPopulated: Boolean =
+    cachedIndex.get().nonEmpty
+
 object SearchIndex:
 
   def search(

@@ -65,6 +65,8 @@ class CatalogueWrapperServiceSpec extends AnyWordSpec with Matchers with Mockito
         .thenReturn(Future.successful(sampleNav))
       when(mockConfig.quickSearchPath)
         .thenReturn("/catalogue-wrapper/quicksearch")
+      when(mockConfig.quickSearchMinTermLength)
+        .thenReturn(3)
       when(mockConfig.assetsPrefix)
         .thenReturn("/catalogue-wrapper/assets")
 
@@ -91,6 +93,8 @@ class CatalogueWrapperServiceSpec extends AnyWordSpec with Matchers with Mockito
         .thenReturn(Future.successful(sampleNav))
       when(mockConfig.quickSearchPath)
         .thenReturn("/catalogue-wrapper/quicksearch")
+      when(mockConfig.quickSearchMinTermLength)
+        .thenReturn(3)
       when(mockConfig.assetsPrefix)
         .thenReturn("/catalogue-wrapper/assets")
 
@@ -106,6 +110,8 @@ class CatalogueWrapperServiceSpec extends AnyWordSpec with Matchers with Mockito
         .thenReturn(Future.successful(sampleNav))
       when(mockConfig.quickSearchPath)
         .thenReturn("/catalogue-wrapper/quicksearch")
+      when(mockConfig.quickSearchMinTermLength)
+        .thenReturn(3)
 
       val result = service.catalogueMenuBar(activeItemId = Some("repos")).futureValue
       result.body should include("MDTP")
@@ -118,6 +124,8 @@ class CatalogueWrapperServiceSpec extends AnyWordSpec with Matchers with Mockito
     "render only the navbar synchronously with supplied menu" in {
       when(mockConfig.quickSearchPath)
         .thenReturn("/catalogue-wrapper/quicksearch")
+      when(mockConfig.quickSearchMinTermLength)
+        .thenReturn(3)
 
       val result = service.catalogueMenuBarWithMenu(sampleMenu, activeItemId = Some("repos"))
       result.body should include("MDTP")
@@ -129,6 +137,8 @@ class CatalogueWrapperServiceSpec extends AnyWordSpec with Matchers with Mockito
     "render layout synchronously with supplied menu" in {
       when(mockConfig.quickSearchPath)
         .thenReturn("/catalogue-wrapper/quicksearch")
+      when(mockConfig.quickSearchMinTermLength)
+        .thenReturn(3)
       when(mockConfig.assetsPrefix)
         .thenReturn("/catalogue-wrapper/assets")
 

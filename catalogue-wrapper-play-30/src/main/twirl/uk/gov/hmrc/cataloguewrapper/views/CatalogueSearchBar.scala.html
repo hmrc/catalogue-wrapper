@@ -14,9 +14,9 @@
  * limitations under the License.
  *@
 
-@(quickSearchUrl: String)(implicit request: RequestHeader, messages: Messages)
+@(quickSearchUrl: String, minSearchLen: Int)(implicit request: RequestHeader, messages: Messages)
 
-<ul id="catalogue-search-bar" class="nav navbar-nav hidden-for-small-screens" data-quicksearch-url="@quickSearchUrl">
+<ul id="catalogue-search-bar" class="nav navbar-nav hidden-for-small-screens" data-quicksearch-url="@quickSearchUrl" data-min-search-len="@minSearchLen">
   <li id="catalogue-search-box" class="search-width-initial catalogue-search position-relative">
     <input
       id="catalogue-search"

@@ -57,6 +57,7 @@ class CatalogueWrapperService @Inject() (
         pageTitle = pageTitle,
         activeItemId = activeItemId,
         quickSearchUrl = config.quickSearchPath,
+        minSearchLen = config.quickSearchMinTermLength,
         showSignOut = showSignOut,
         signOutUrl = signOutUrl,
         scripts = scripts,
@@ -86,6 +87,7 @@ class CatalogueWrapperService @Inject() (
       pageTitle = pageTitle,
       activeItemId = activeItemId,
       quickSearchUrl = config.quickSearchPath,
+      minSearchLen = config.quickSearchMinTermLength,
       showSignOut = showSignOut,
       signOutUrl = signOutUrl,
       scripts = scripts,
@@ -110,6 +112,7 @@ class CatalogueWrapperService @Inject() (
         menu = nav.menu,
         activeItemId = activeItemId,
         quickSearchUrl = config.quickSearchPath,
+        minSearchLen = config.quickSearchMinTermLength,
         showSignOut = showSignOut,
         signOutUrl = signOutUrl
       )
@@ -129,6 +132,7 @@ class CatalogueWrapperService @Inject() (
       menu = menu,
       activeItemId = activeItemId,
       quickSearchUrl = config.quickSearchPath,
+      minSearchLen = config.quickSearchMinTermLength,
       showSignOut = showSignOut,
       signOutUrl = signOutUrl
     )

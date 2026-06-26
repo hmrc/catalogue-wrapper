@@ -13,7 +13,7 @@
   if (!bar || !input || !matches) return;
 
   const quickSearchUrl = bar.dataset.quicksearchUrl || "/quicksearch";
-  const minSearchLen = 3;
+  const minSearchLen = Number(bar.dataset.minSearchLen || "3");
 
   let selectedItem = 0;
   let resultCount  = 0;
