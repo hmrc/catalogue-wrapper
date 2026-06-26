@@ -20,7 +20,6 @@ import play.api.i18n.Messages
 import play.api.mvc.RequestHeader
 import play.twirl.api.HtmlFormat
 import uk.gov.hmrc.cataloguewrapper.config.CatalogueWrapperConfig
-import uk.gov.hmrc.cataloguewrapper.connectors.CatalogueMenuConnector
 import uk.gov.hmrc.cataloguewrapper.models.BannerMenu
 import uk.gov.hmrc.cataloguewrapper.views.html.StandardCatalogueLayout
 import uk.gov.hmrc.cataloguewrapper.views.html.{CatalogueMenuBar => CatalogueMenuBarView}
@@ -31,12 +30,12 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class CatalogueWrapperService @Inject() (
-    connector: CatalogueMenuConnector,
+    navigationCache: CatalogueNavigationCache,
     config: CatalogueWrapperConfig,
     standardLayout: StandardCatalogueLayout
 )(implicit ec: ExecutionContext):
 
-  /** Fetch the menu from catalogue-navigation and render the full page layout. */
+  /** Refresh navigation data from the backend (or fall back to cache) and render the full page layout. */
   def standardCatalogueLayout(
       content: HtmlFormat.Appendable,
       pageTitle: Option[String] = None,
@@ -51,9 +50,9 @@ class CatalogueWrapperService @Inject() (
       request: RequestHeader,
       messages: Messages
   ): Future[HtmlFormat.Appendable] =
-    connector.getMenu().map { menu =>
+    navigationCache.refreshOrCached().map { nav =>
       standardLayout(
-        menu = menu,
+        menu = nav.menu,
         content = content,
         pageTitle = pageTitle,
         activeItemId = activeItemId,
@@ -94,8 +93,8 @@ class CatalogueWrapperService @Inject() (
       fullWidth = fullWidth
     )
 
-  /** Fetch the menu and render only the navbar/search bar. Use this when you want to embed the menu bar into an
-    * existing layout rather than replacing the whole page shell.
+  /** Refresh navigation data from the backend (or fall back to cache) and render only the navbar/search bar. Use this
+    * when you want to embed the menu bar into an existing layout rather than replacing the whole page shell.
     */
   def catalogueMenuBar(
       activeItemId: Option[String] = None,
@@ -106,9 +105,9 @@ class CatalogueWrapperService @Inject() (
       request: RequestHeader,
       messages: Messages
   ): Future[HtmlFormat.Appendable] =
-    connector.getMenu().map { menu =>
+    navigationCache.refreshOrCached().map { nav =>
       CatalogueMenuBarView(
-        menu = menu,
+        menu = nav.menu,
         activeItemId = activeItemId,
         quickSearchUrl = config.quickSearchPath,
         showSignOut = showSignOut,

@@ -25,7 +25,7 @@ import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
-import uk.gov.hmrc.cataloguewrapper.models.{BannerMenu, MenuDropdown, MenuLink, SearchTerm}
+import uk.gov.hmrc.cataloguewrapper.models.{BannerMenu, MenuDropdown, MenuLink, NavigationData, SearchTerm}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.test.WireMockSupport
@@ -60,52 +60,39 @@ class CatalogueMenuConnectorSpec
     dropdowns = Seq(MenuDropdown("explore", "Explore", Seq(MenuLink("teams", "Teams", "/teams"))))
   )
 
-  "getMenu" should {
-    "call /menu-bar/menu and decode BannerMenu" in {
+  val sampleNavData = NavigationData(
+    menu = sampleMenu,
+    searchIndex = Seq(SearchTerm("service", "foo-service", "/services/foo-service"))
+  )
+
+  "getNavigationData" should {
+    "call /menu-bar/navigation-data and decode NavigationData containing menu + searchIndex" in {
       stubFor(
-        get(urlEqualTo("/menu-bar/menu"))
+        get(urlEqualTo("/menu-bar/navigation-data"))
           .willReturn(
             aResponse()
               .withStatus(200)
               .withHeader("Content-Type", "application/json")
-              .withBody(Json.toJson(sampleMenu).toString())
+              .withBody(Json.toJson(sampleNavData).toString())
           )
       )
 
-      connector.getMenu().futureValue shouldBe sampleMenu
-      verify(getRequestedFor(urlEqualTo("/menu-bar/menu")))
-    }
-  }
-
-  "search" should {
-    "call /menu-bar/quicksearch with query and limit parameters" in {
-      val results = Seq(SearchTerm("service", "foo-service", "/services/foo-service"))
-      stubFor(
-        get(urlPathEqualTo("/menu-bar/quicksearch"))
-          .withQueryParam("query", equalTo("foo"))
-          .withQueryParam("limit", equalTo("10"))
-          .willReturn(
-            aResponse()
-              .withStatus(200)
-              .withHeader("Content-Type", "application/json")
-              .withBody(Json.toJson(results).toString())
-          )
-      )
-
-      connector.search("foo", 10).futureValue shouldBe results
+      connector.getNavigationData().futureValue shouldBe sampleNavData
+      verify(getRequestedFor(urlEqualTo("/menu-bar/navigation-data")))
     }
 
-    "return empty sequence when backend returns empty array" in {
+    "decode NavigationData with an empty searchIndex" in {
+      val navDataNoSearch = sampleNavData.copy(searchIndex = Seq.empty)
       stubFor(
-        get(urlPathEqualTo("/menu-bar/quicksearch"))
+        get(urlEqualTo("/menu-bar/navigation-data"))
           .willReturn(
             aResponse()
               .withStatus(200)
               .withHeader("Content-Type", "application/json")
-              .withBody("[]")
+              .withBody(Json.toJson(navDataNoSearch).toString())
           )
       )
 
-      connector.search("xyz").futureValue shouldBe Seq.empty
+      connector.getNavigationData().futureValue shouldBe navDataNoSearch
     }
   }

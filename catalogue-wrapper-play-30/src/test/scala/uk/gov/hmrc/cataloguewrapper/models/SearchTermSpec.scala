@@ -43,3 +43,21 @@ class SearchTermSpec extends AnyWordSpec with Matchers:
       term.openInNewWindow shouldBe false
     }
   }
+
+  "SearchTerm.normalise" should {
+    "lower-case and strip spaces, hyphens, and underscores" in {
+      SearchTerm.normalise("My-Service_Name") shouldBe "myservicename"
+    }
+  }
+
+  "SearchTerm.terms" should {
+    "include normalised name, linkType, and hints" in {
+      val term = SearchTerm(
+        linkType = "service",
+        name = "my-service",
+        href = "/services/my-service",
+        hints = Set("alias")
+      )
+      term.terms shouldBe Set("myservice", "service", "alias")
+    }
+  }

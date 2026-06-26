@@ -28,8 +28,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers.stubMessages
 import play.twirl.api.Html
 import uk.gov.hmrc.cataloguewrapper.config.CatalogueWrapperConfig
-import uk.gov.hmrc.cataloguewrapper.connectors.CatalogueMenuConnector
-import uk.gov.hmrc.cataloguewrapper.models.{BannerMenu, MenuLink}
+import uk.gov.hmrc.cataloguewrapper.models.{BannerMenu, MenuLink, NavigationData}
 import uk.gov.hmrc.cataloguewrapper.views.html.{CatalogueScripts, CatalogueStylesheets, StandardCatalogueLayout}
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -38,15 +37,15 @@ import scala.concurrent.Future
 
 class CatalogueWrapperServiceSpec extends AnyWordSpec with Matchers with MockitoSugar with ScalaFutures:
 
-  private val mockConnector = mock[CatalogueMenuConnector]
-  private val mockConfig    = mock[CatalogueWrapperConfig]
+  private val mockNavCache = mock[CatalogueNavigationCache]
+  private val mockConfig   = mock[CatalogueWrapperConfig]
 
   private val layout = new StandardCatalogueLayout(
     new CatalogueStylesheets(mockConfig),
     new CatalogueScripts(mockConfig)
   )
 
-  private val service = new CatalogueWrapperService(mockConnector, mockConfig, layout)
+  private val service = new CatalogueWrapperService(mockNavCache, mockConfig, layout)
 
   private val sampleMenu = BannerMenu(
     brand = MenuLink("brand", "MDTP", "/"),
@@ -54,14 +53,16 @@ class CatalogueWrapperServiceSpec extends AnyWordSpec with Matchers with Mockito
     dropdowns = Seq.empty
   )
 
+  private val sampleNav = NavigationData(menu = sampleMenu, searchIndex = Seq.empty)
+
   given HeaderCarrier = HeaderCarrier()
   given RequestHeader = FakeRequest()
   given Messages      = stubMessages()
 
   "standardCatalogueLayout" should {
-    "fetch menu from connector and render the layout" in {
-      when(mockConnector.getMenu()(any[HeaderCarrier]))
-        .thenReturn(Future.successful(sampleMenu))
+    "fetch navigation from cache and render the layout" in {
+      when(mockNavCache.refreshOrCached()(any[HeaderCarrier]))
+        .thenReturn(Future.successful(sampleNav))
       when(mockConfig.quickSearchPath)
         .thenReturn("/catalogue-wrapper/quicksearch")
       when(mockConfig.assetsPrefix)
@@ -73,8 +74,8 @@ class CatalogueWrapperServiceSpec extends AnyWordSpec with Matchers with Mockito
       result.body should include("<p>content</p>")
     }
 
-    "fail the future if connector fails" in {
-      when(mockConnector.getMenu()(any[HeaderCarrier]))
+    "fail the future if cache fails and cache is empty (backend never succeeded)" in {
+      when(mockNavCache.refreshOrCached()(any[HeaderCarrier]))
         .thenReturn(Future.failed(RuntimeException("catalogue-navigation unavailable")))
       when(mockConfig.quickSearchPath)
         .thenReturn("/catalogue-wrapper/quicksearch")
@@ -84,12 +85,25 @@ class CatalogueWrapperServiceSpec extends AnyWordSpec with Matchers with Mockito
         .failed
         .futureValue shouldBe a[RuntimeException]
     }
+
+    "render using navigation returned by the cache" in {
+      when(mockNavCache.refreshOrCached()(any[HeaderCarrier]))
+        .thenReturn(Future.successful(sampleNav))
+      when(mockConfig.quickSearchPath)
+        .thenReturn("/catalogue-wrapper/quicksearch")
+      when(mockConfig.assetsPrefix)
+        .thenReturn("/catalogue-wrapper/assets")
+
+      val result = service.standardCatalogueLayout(Html("<p>cached</p>"), Some("Stale Page")).futureValue
+      result.body should include("MDTP - Stale Page")
+      result.body should include("<p>cached</p>")
+    }
   }
 
   "catalogueMenuBar" should {
-    "fetch menu from connector and render only the navbar" in {
-      when(mockConnector.getMenu()(any[HeaderCarrier]))
-        .thenReturn(Future.successful(sampleMenu))
+    "fetch navigation from cache and render only the navbar" in {
+      when(mockNavCache.refreshOrCached()(any[HeaderCarrier]))
+        .thenReturn(Future.successful(sampleNav))
       when(mockConfig.quickSearchPath)
         .thenReturn("/catalogue-wrapper/quicksearch")
 

@@ -53,7 +53,21 @@ final case class SearchTerm(
     weight: Float = 0.5f,
     hints: Set[String] = Set.empty,
     openInNewWindow: Boolean = false
-)
+):
+  lazy val terms: Set[String] =
+    Set(name, linkType).union(hints).map(SearchTerm.normalise)
 
 object SearchTerm:
   given OFormat[SearchTerm] = Json.using[Json.WithDefaultValues].format[SearchTerm]
+
+  def normalise(value: String): String =
+    value.toLowerCase.replaceAll("[ \\-_]", "")
+
+final case class NavigationData(
+    menu: BannerMenu,
+    searchIndex: Seq[SearchTerm]
+)
+
+object NavigationData:
+  given OFormat[NavigationData] =
+    Json.using[Json.WithDefaultValues].format[NavigationData]

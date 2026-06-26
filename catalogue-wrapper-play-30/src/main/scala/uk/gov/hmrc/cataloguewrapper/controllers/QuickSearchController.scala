@@ -19,33 +19,34 @@ package uk.gov.hmrc.cataloguewrapper.controllers
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, MessagesControllerComponents}
 import uk.gov.hmrc.cataloguewrapper.config.CatalogueWrapperConfig
-import uk.gov.hmrc.cataloguewrapper.connectors.CatalogueMenuConnector
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.cataloguewrapper.models.SearchTerm
+import uk.gov.hmrc.cataloguewrapper.search.SearchIndex
 import uk.gov.hmrc.play.bootstrap.frontend.controller.FrontendBaseController
-import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
-// TODO: When catalogue-navigation becomes user/admin-aware, decide whether this proxy
-// should enforce consuming-service auth or simply forward session/header context.
-// Option A: remain unauthenticated, forward headers, let catalogue-navigation decide.
-//    - It will be this but the frontend will be authenticated and the backend will also validate that authentication
-//    - passed through HeaderCarrier as session cookies
-// Option B: consuming service owns the route and wraps it in its own IdentifierAction.
-// Option C: wrapper exposes an injected action-builder hook.
 @Singleton
 class QuickSearchController @Inject() (
     val controllerComponents: MessagesControllerComponents,
-    connector: CatalogueMenuConnector,
+    searchIndex: SearchIndex,
     config: CatalogueWrapperConfig
 )(implicit ec: ExecutionContext)
     extends FrontendBaseController:
 
   def search(query: String, limit: Option[Int]): Action[AnyContent] =
-    Action.async { implicit request =>
-      given HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
-      connector
-        .search(query, limit.getOrElse(config.quickSearchLimit))
-        .map(results => Ok(Json.toJson(results)))
+    Action {
+      val queryTerms =
+        query.trim
+          .split("\\s+")
+          .toIndexedSeq
+          .map(SearchTerm.normalise)
+          .filter(_.length >= config.quickSearchMinTermLength)
+          .take(config.quickSearchMaxTerms)
+
+      val results =
+        if queryTerms.isEmpty then Seq.empty
+        else searchIndex.search(queryTerms).take(limit.getOrElse(config.quickSearchLimit))
+
+      Ok(Json.toJson(results))
     }

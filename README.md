@@ -16,9 +16,9 @@ Consuming services do **not** need to copy `search.js`, navbar CSS, or menu mode
 ## Relationship to `catalogue-navigation`
 
 `catalogue-wrapper` is the **rendering** library.  
-`catalogue-navigation` is the **data** service (menu structure and search index).
+`catalogue-navigation` is the **data** service (full navigation payload: menu structure and search index).
 
-The wrapper calls `catalogue-navigation` via HTTP. It does not rebuild the search index or know about upstream Catalogue services.
+The wrapper calls `catalogue-navigation` via HTTP for the full navigation payload (`GET /menu-bar/navigation-data`). It does not know about upstream Catalogue services, but it does build and query an in-memory optimised search index from the `SearchTerm` data supplied by `catalogue-navigation`.
 
 ## Adding the dependency
 
@@ -41,8 +41,10 @@ In your service's `conf/app.routes` (or equivalent):
 ```
 
 This mounts:
-- `GET /catalogue-wrapper/quicksearch` — proxies search to `catalogue-navigation`
+- `GET /catalogue-wrapper/quicksearch` — searches the wrapper's locally cached search index (no backend call per query)
 - `GET /catalogue-wrapper/assets/*file` — serves wrapper CSS/JS assets
+
+On each page render, `CatalogueWrapperService` attempts to refresh the full navigation payload from `catalogue-navigation`. If that call fails after at least one prior successful refresh, the wrapper falls back to the cached menu and cached search index.
 
 ## Using `CatalogueWrapperService`
 

@@ -16,8 +16,7 @@
 
 package uk.gov.hmrc.cataloguewrapper.controllers
 
-import org.mockito.ArgumentMatchers.{any, eq as eqTo}
-import org.mockito.Mockito.when
+import org.mockito.Mockito.{clearInvocations, verify, verifyNoInteractions, when}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
@@ -25,54 +24,80 @@ import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.cataloguewrapper.config.CatalogueWrapperConfig
-import uk.gov.hmrc.cataloguewrapper.connectors.CatalogueMenuConnector
 import uk.gov.hmrc.cataloguewrapper.models.SearchTerm
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.cataloguewrapper.search.SearchIndex
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
 class QuickSearchControllerSpec extends AnyWordSpec with Matchers with MockitoSugar:
 
-  private val mockConnector = mock[CatalogueMenuConnector]
-  private val mockConfig    = mock[CatalogueWrapperConfig]
+  private val mockSearchIndex = mock[SearchIndex]
+  private val mockConfig      = mock[CatalogueWrapperConfig]
 
   when(mockConfig.quickSearchLimit).thenReturn(20)
+  when(mockConfig.quickSearchMinTermLength).thenReturn(3)
+  when(mockConfig.quickSearchMaxTerms).thenReturn(5)
 
   private val controller = new QuickSearchController(
     stubMessagesControllerComponents(),
-    mockConnector,
+    mockSearchIndex,
     mockConfig
   )
 
   "search" should {
-    "return OK with JSON results using the provided limit" in {
-      val results = Seq(SearchTerm("service", "foo", "/services/foo"))
-      when(mockConnector.search(eqTo("foo"), eqTo(10))(any[HeaderCarrier]))
-        .thenReturn(Future.successful(results))
+    "search the local SearchIndex without calling the connector" in {
+      val results = Seq(SearchTerm("service", "foo-service", "/services/foo-service"))
+      when(mockSearchIndex.search(Seq("foo"))).thenReturn(results)
 
-      val result = controller.search("foo", Some(10))(FakeRequest())
+      val result = controller.search("foo", None)(FakeRequest())
       status(result) shouldBe OK
       contentType(result) shouldBe Some("application/json")
       contentAsJson(result) shouldBe Json.toJson(results)
     }
 
+    "respect the limit parameter" in {
+      val allResults = (1 to 10).map(i => SearchTerm("service", s"svc-$i", s"/services/svc-$i"))
+      when(mockSearchIndex.search(Seq("svc"))).thenReturn(allResults)
+
+      val result = controller.search("svc", Some(3))(FakeRequest())
+      status(result) shouldBe OK
+      contentAsJson(result).as[Seq[SearchTerm]] should have length 3
+    }
+
     "use config.quickSearchLimit when no limit is provided" in {
-      val results = Seq(SearchTerm("service", "bar", "/services/bar"))
-      when(mockConnector.search(eqTo("bar"), eqTo(20))(any[HeaderCarrier]))
-        .thenReturn(Future.successful(results))
+      val results =
+        (1 to 30).map(i => SearchTerm("service", s"bar-service-$i", s"/services/bar-service-$i"))
+      when(mockSearchIndex.search(Seq("bar"))).thenReturn(results)
 
       val result = controller.search("bar", None)(FakeRequest())
       status(result) shouldBe OK
-      contentAsJson(result) shouldBe Json.toJson(results)
+      contentAsJson(result).as[Seq[SearchTerm]] should have length 20
     }
 
-    "return empty array when connector returns empty" in {
-      when(mockConnector.search(any[String], any[Int])(any[HeaderCarrier]))
-        .thenReturn(Future.successful(Seq.empty))
+    "return empty array for query terms shorter than min-term-length after normalisation" in {
+      clearInvocations(mockSearchIndex)
+      // "a-b" has length 3 raw but normalises to "ab" (length 2) — must be filtered
+      val result = controller.search("a-b", None)(FakeRequest())
+      status(result) shouldBe OK
+      contentAsJson(result) shouldBe Json.arr()
+      verifyNoInteractions(mockSearchIndex)
+    }
+
+    "return empty array when SearchIndex returns empty" in {
+      when(mockSearchIndex.search(Seq("zzz"))).thenReturn(Seq.empty)
 
       val result = controller.search("zzz", None)(FakeRequest())
       status(result) shouldBe OK
       contentAsJson(result) shouldBe Json.arr()
+    }
+
+    "apply AND semantics by passing all query tokens to SearchIndex" in {
+      val results = Seq(SearchTerm("service", "foo-bar", "/services/foo-bar"))
+      when(mockSearchIndex.search(Seq("foo", "bar"))).thenReturn(results)
+
+      val result = controller.search("foo bar", None)(FakeRequest())
+      status(result) shouldBe OK
+      contentAsJson(result) shouldBe Json.toJson(results)
+      verify(mockSearchIndex).search(Seq("foo", "bar"))
     }
   }

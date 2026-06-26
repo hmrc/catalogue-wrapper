@@ -17,7 +17,7 @@
 package uk.gov.hmrc.cataloguewrapper.connectors
 
 import uk.gov.hmrc.cataloguewrapper.config.CatalogueWrapperConfig
-import uk.gov.hmrc.cataloguewrapper.models.{BannerMenu, SearchTerm}
+import uk.gov.hmrc.cataloguewrapper.models.NavigationData
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
@@ -31,12 +31,7 @@ class CatalogueMenuConnector @Inject() (
     config: CatalogueWrapperConfig
 )(implicit ec: ExecutionContext):
 
-  def getMenu()(implicit hc: HeaderCarrier): Future[BannerMenu] =
+  def getNavigationData()(implicit hc: HeaderCarrier): Future[NavigationData] =
     httpClient
-      .get(url"${config.menuBarBaseUrl}/menu-bar/menu")
-      .execute[BannerMenu]
-
-  def search(query: String, limit: Int = 20)(implicit hc: HeaderCarrier): Future[Seq[SearchTerm]] =
-    httpClient
-      .get(url"${config.menuBarBaseUrl}/menu-bar/quicksearch?query=$query&limit=$limit")
-      .execute[Seq[SearchTerm]]
+      .get(url"${config.menuBarBaseUrl}/menu-bar/navigation-data")
+      .execute[NavigationData]
