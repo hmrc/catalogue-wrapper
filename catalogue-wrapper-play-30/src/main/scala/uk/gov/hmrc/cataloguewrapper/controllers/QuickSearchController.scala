@@ -54,11 +54,11 @@ class QuickSearchController @Inject() (
           () => searchIndex.search(queryTerms).take(limit.getOrElse(config.quickSearchLimit))
 
         val resultsF =
-          if searchIndex.isPopulated then Future.successful(searchNow())
-          else
+          if navigationCache.shouldRefreshForSearch() then
             given HeaderCarrier =
               HeaderCarrierConverter.fromRequestAndSession(request, request.session)
             navigationCache.refreshOrCached().map(_ => searchNow())
+          else Future.successful(searchNow())
 
         resultsF.map(results => Ok(Json.toJson(results)))
     }

@@ -140,4 +140,11 @@ class SearchIndexSpec extends AnyWordSpec with Matchers:
       idx.replaceAll(Seq(term("foo-service")))
       idx.isPopulated shouldBe true
     }
+
+    "report isPopulated true after replaceAll with empty terms (loaded but empty)" in {
+      val idx = new SearchIndex
+      idx.replaceAll(Seq.empty)
+      idx.isPopulated shouldBe true
+      idx.search(Seq("foo")) shouldBe Seq.empty
+    }
   }

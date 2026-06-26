@@ -17,7 +17,7 @@
 package uk.gov.hmrc.cataloguewrapper.controllers
 
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{clearInvocations, verify, verifyNoInteractions, when}
+import org.mockito.Mockito.{clearInvocations, never, verify, verifyNoInteractions, when}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -57,21 +57,21 @@ class QuickSearchControllerSpec extends AnyWordSpec with Matchers with MockitoSu
   )
 
   "search" should {
-    "search the local SearchIndex when it is already populated" in {
+    "search the local SearchIndex when cache does not need refreshing" in {
       val results = Seq(SearchTerm("service", "foo-service", "/services/foo-service"))
-      when(mockSearchIndex.isPopulated).thenReturn(true)
+      when(mockNavCache.shouldRefreshForSearch()).thenReturn(false)
       when(mockSearchIndex.search(Seq("foo"))).thenReturn(results)
 
       val result = controller.search("foo", None)(FakeRequest())
       status(result) shouldBe OK
       contentType(result) shouldBe Some("application/json")
       contentAsJson(result) shouldBe Json.toJson(results)
-      verifyNoInteractions(mockNavCache)
+      verify(mockNavCache, never()).refreshOrCached()(any[HeaderCarrier])
     }
 
-    "warm the cache via CatalogueNavigationCache when SearchIndex is cold" in {
+    "warm the cache via CatalogueNavigationCache when shouldRefreshForSearch is true" in {
       val results = Seq(SearchTerm("service", "foo-service", "/services/foo-service"))
-      when(mockSearchIndex.isPopulated).thenReturn(false)
+      when(mockNavCache.shouldRefreshForSearch()).thenReturn(true)
       when(mockNavCache.refreshOrCached()(any[HeaderCarrier]))
         .thenReturn(Future.successful(sampleNav))
       when(mockSearchIndex.search(Seq("foo"))).thenReturn(results)
@@ -82,9 +82,20 @@ class QuickSearchControllerSpec extends AnyWordSpec with Matchers with MockitoSu
       verify(mockNavCache).refreshOrCached()(any[HeaderCarrier])
     }
 
+    "return empty array when refresh falls back to empty navigation data" in {
+      when(mockNavCache.shouldRefreshForSearch()).thenReturn(true)
+      when(mockNavCache.refreshOrCached()(any[HeaderCarrier]))
+        .thenReturn(Future.successful(NavigationData.empty))
+      when(mockSearchIndex.search(Seq("foo"))).thenReturn(Seq.empty)
+
+      val result = controller.search("foo", None)(FakeRequest())
+      status(result) shouldBe OK
+      contentAsJson(result) shouldBe Json.arr()
+    }
+
     "respect the limit parameter" in {
       val allResults = (1 to 10).map(i => SearchTerm("service", s"svc-$i", s"/services/svc-$i"))
-      when(mockSearchIndex.isPopulated).thenReturn(true)
+      when(mockNavCache.shouldRefreshForSearch()).thenReturn(false)
       when(mockSearchIndex.search(Seq("svc"))).thenReturn(allResults)
 
       val result = controller.search("svc", Some(3))(FakeRequest())
@@ -95,7 +106,7 @@ class QuickSearchControllerSpec extends AnyWordSpec with Matchers with MockitoSu
     "use config.quickSearchLimit when no limit is provided" in {
       val results =
         (1 to 30).map(i => SearchTerm("service", s"bar-service-$i", s"/services/bar-service-$i"))
-      when(mockSearchIndex.isPopulated).thenReturn(true)
+      when(mockNavCache.shouldRefreshForSearch()).thenReturn(false)
       when(mockSearchIndex.search(Seq("bar"))).thenReturn(results)
 
       val result = controller.search("bar", None)(FakeRequest())
@@ -104,16 +115,17 @@ class QuickSearchControllerSpec extends AnyWordSpec with Matchers with MockitoSu
     }
 
     "return empty array for query terms shorter than min-term-length after normalisation" in {
-      clearInvocations(mockSearchIndex)
+      clearInvocations(mockSearchIndex, mockNavCache)
       // "a-b" has length 3 raw but normalises to "ab" (length 2) — must be filtered
       val result = controller.search("a-b", None)(FakeRequest())
       status(result) shouldBe OK
       contentAsJson(result) shouldBe Json.arr()
       verifyNoInteractions(mockSearchIndex)
+      verifyNoInteractions(mockNavCache)
     }
 
     "return empty array when SearchIndex returns empty" in {
-      when(mockSearchIndex.isPopulated).thenReturn(true)
+      when(mockNavCache.shouldRefreshForSearch()).thenReturn(false)
       when(mockSearchIndex.search(Seq("zzz"))).thenReturn(Seq.empty)
 
       val result = controller.search("zzz", None)(FakeRequest())
@@ -123,7 +135,7 @@ class QuickSearchControllerSpec extends AnyWordSpec with Matchers with MockitoSu
 
     "apply AND semantics by passing all query tokens to SearchIndex" in {
       val results = Seq(SearchTerm("service", "foo-bar", "/services/foo-bar"))
-      when(mockSearchIndex.isPopulated).thenReturn(true)
+      when(mockNavCache.shouldRefreshForSearch()).thenReturn(false)
       when(mockSearchIndex.search(Seq("foo", "bar"))).thenReturn(results)
 
       val result = controller.search("foo bar", None)(FakeRequest())

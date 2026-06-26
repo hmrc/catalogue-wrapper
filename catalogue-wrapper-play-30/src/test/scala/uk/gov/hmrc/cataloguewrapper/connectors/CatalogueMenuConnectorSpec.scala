@@ -60,39 +60,54 @@ class CatalogueMenuConnectorSpec
     dropdowns = Seq(MenuDropdown("explore", "Explore", Seq(MenuLink("teams", "Teams", "/teams"))))
   )
 
-  val sampleNavData = NavigationData(
-    menu = sampleMenu,
-    searchIndex = Seq(SearchTerm("service", "foo-service", "/services/foo-service"))
-  )
+  val sampleSearchTerms = Seq(SearchTerm("service", "foo-service", "/services/foo-service"))
 
   "getNavigationData" should {
-    "call /menu-bar/navigation-data and decode NavigationData containing menu + searchIndex" in {
+    "call /menu-bar/menu and /menu-bar/search-index and combine into NavigationData" in {
       stubFor(
-        get(urlEqualTo("/menu-bar/navigation-data"))
+        get(urlEqualTo("/menu-bar/menu"))
           .willReturn(
             aResponse()
               .withStatus(200)
               .withHeader("Content-Type", "application/json")
-              .withBody(Json.toJson(sampleNavData).toString())
+              .withBody(Json.toJson(sampleMenu).toString())
+          )
+      )
+      stubFor(
+        get(urlEqualTo("/menu-bar/search-index"))
+          .willReturn(
+            aResponse()
+              .withStatus(200)
+              .withHeader("Content-Type", "application/json")
+              .withBody(Json.toJson(sampleSearchTerms).toString())
           )
       )
 
-      connector.getNavigationData().futureValue shouldBe sampleNavData
-      verify(getRequestedFor(urlEqualTo("/menu-bar/navigation-data")))
+      connector.getNavigationData().futureValue shouldBe NavigationData(sampleMenu, sampleSearchTerms)
+      verify(getRequestedFor(urlEqualTo("/menu-bar/menu")))
+      verify(getRequestedFor(urlEqualTo("/menu-bar/search-index")))
     }
 
-    "decode NavigationData with an empty searchIndex" in {
-      val navDataNoSearch = sampleNavData.copy(searchIndex = Seq.empty)
+    "decode NavigationData with an empty search index" in {
       stubFor(
-        get(urlEqualTo("/menu-bar/navigation-data"))
+        get(urlEqualTo("/menu-bar/menu"))
           .willReturn(
             aResponse()
               .withStatus(200)
               .withHeader("Content-Type", "application/json")
-              .withBody(Json.toJson(navDataNoSearch).toString())
+              .withBody(Json.toJson(sampleMenu).toString())
+          )
+      )
+      stubFor(
+        get(urlEqualTo("/menu-bar/search-index"))
+          .willReturn(
+            aResponse()
+              .withStatus(200)
+              .withHeader("Content-Type", "application/json")
+              .withBody("[]")
           )
       )
 
-      connector.getNavigationData().futureValue shouldBe navDataNoSearch
+      connector.getNavigationData().futureValue shouldBe NavigationData(sampleMenu, Seq.empty)
     }
   }

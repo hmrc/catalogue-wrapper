@@ -38,6 +38,11 @@ class CatalogueWrapperConfig @Inject() (
   val quickSearchMaxTerms: Int =
     configuration.getOptional[Int]("catalogue-wrapper.quick-search.max-terms").getOrElse(5)
 
+  val quickSearchRefreshThrottleSeconds: Long =
+    configuration
+      .getOptional[Long]("catalogue-wrapper.quick-search.refresh-throttle-seconds")
+      .getOrElse(30L)
+
   val assetsPrefix: String =
     configuration.getOptional[String]("catalogue-wrapper.assets-prefix").getOrElse("/catalogue-wrapper/assets")
 

@@ -46,6 +46,13 @@ final case class BannerMenu(
 object BannerMenu:
   given OFormat[BannerMenu] = Json.format[BannerMenu]
 
+  val empty: BannerMenu =
+    BannerMenu(
+      brand = MenuLink("brand", "MDTP", "/"),
+      topLevelLinks = Seq.empty,
+      dropdowns = Seq.empty
+    )
+
 final case class SearchTerm(
     linkType: String,
     name: String,
@@ -71,3 +78,9 @@ final case class NavigationData(
 object NavigationData:
   given OFormat[NavigationData] =
     Json.using[Json.WithDefaultValues].format[NavigationData]
+
+  val empty: NavigationData =
+    NavigationData(
+      menu = BannerMenu.empty,
+      searchIndex = Seq.empty
+    )

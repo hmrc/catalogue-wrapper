@@ -17,7 +17,7 @@
 package uk.gov.hmrc.cataloguewrapper.connectors
 
 import uk.gov.hmrc.cataloguewrapper.config.CatalogueWrapperConfig
-import uk.gov.hmrc.cataloguewrapper.models.NavigationData
+import uk.gov.hmrc.cataloguewrapper.models.{BannerMenu, NavigationData, SearchTerm}
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
@@ -32,6 +32,21 @@ class CatalogueMenuConnector @Inject() (
 )(implicit ec: ExecutionContext):
 
   def getNavigationData()(implicit hc: HeaderCarrier): Future[NavigationData] =
+    val menuF        = getMenu()
+    val searchIndexF = getSearchIndex()
+
+    menuF
+      .zip(searchIndexF)
+      .map { case (menu, searchIndex) =>
+        NavigationData(menu = menu, searchIndex = searchIndex)
+      }
+
+  private def getMenu()(implicit hc: HeaderCarrier): Future[BannerMenu] =
     httpClient
-      .get(url"${config.menuBarBaseUrl}/menu-bar/navigation-data")
-      .execute[NavigationData]
+      .get(url"${config.menuBarBaseUrl}/menu-bar/menu")
+      .execute[BannerMenu]
+
+  private def getSearchIndex()(implicit hc: HeaderCarrier): Future[Seq[SearchTerm]] =
+    httpClient
+      .get(url"${config.menuBarBaseUrl}/menu-bar/search-index")
+      .execute[Seq[SearchTerm]]

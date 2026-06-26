@@ -25,16 +25,18 @@ import javax.inject.Singleton
 class SearchIndex:
 
   private val cachedIndex =
-    new AtomicReference[Map[String, Seq[SearchTerm]]](Map.empty)
+    new AtomicReference[Option[Map[String, Seq[SearchTerm]]]](None)
 
   def replaceAll(terms: Seq[SearchTerm]): Unit =
-    cachedIndex.set(SearchIndex.optimiseIndex(terms))
+    cachedIndex.set(Some(SearchIndex.optimiseIndex(terms)))
 
   def search(queryTerms: Seq[String]): Seq[SearchTerm] =
-    SearchIndex.search(queryTerms, cachedIndex.get())
+    cachedIndex.get() match
+      case Some(index) => SearchIndex.search(queryTerms, index)
+      case None        => Seq.empty
 
   def isPopulated: Boolean =
-    cachedIndex.get().nonEmpty
+    cachedIndex.get().isDefined
 
 object SearchIndex:
 

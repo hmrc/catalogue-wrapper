@@ -76,16 +76,21 @@ class CatalogueWrapperServiceSpec extends AnyWordSpec with Matchers with Mockito
       result.body should include("<p>content</p>")
     }
 
-    "fail the future if cache fails and cache is empty (backend never succeeded)" in {
+    "render with empty navigation when backend is unavailable and cache is empty" in {
       when(mockNavCache.refreshOrCached()(any[HeaderCarrier]))
-        .thenReturn(Future.failed(RuntimeException("catalogue-navigation unavailable")))
+        .thenReturn(Future.successful(NavigationData.empty))
       when(mockConfig.quickSearchPath)
         .thenReturn("/catalogue-wrapper/quicksearch")
+      when(mockConfig.quickSearchMinTermLength)
+        .thenReturn(3)
+      when(mockConfig.assetsPrefix)
+        .thenReturn("/catalogue-wrapper/assets")
 
-      service
-        .standardCatalogueLayout(Html("<p>content</p>"), Some("Test Page"))
-        .failed
-        .futureValue shouldBe a[RuntimeException]
+      val result =
+        service.standardCatalogueLayout(Html("<p>content</p>"), Some("Test Page")).futureValue
+      result.body should include("MDTP - Test Page")
+      result.body should include("/catalogue-wrapper/quicksearch")
+      result.body should include("<p>content</p>")
     }
 
     "render using navigation returned by the cache" in {
