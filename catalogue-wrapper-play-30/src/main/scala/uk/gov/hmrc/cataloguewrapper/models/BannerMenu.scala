@@ -20,8 +20,8 @@ import play.api.libs.json.{Json, OFormat}
 
 final case class MenuLink(
     id: String,
-    text: String,
-    href: String,
+    name: String,
+    href: Option[String],
     external: Boolean = false
 )
 
@@ -30,7 +30,7 @@ object MenuLink:
 
 final case class MenuDropdown(
     id: String,
-    text: String,
+    name: String,
     items: Seq[MenuLink]
 )
 
@@ -48,7 +48,7 @@ object BannerMenu:
 
   val empty: BannerMenu =
     BannerMenu(
-      brand = MenuLink("brand", "MDTP", "/"),
+      brand = MenuLink("brand", "MDTP", Some("/")),
       topLevelLinks = Seq.empty,
       dropdowns = Seq.empty
     )

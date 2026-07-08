@@ -28,7 +28,7 @@ signOutUrl: Option[String] = None
 <nav class="navbar navbar-expand-md navbar-dark bg-black">
   <div class="container">
     <a class="navbar-brand" href="@menu.brand.href">
-      @menu.brand.text
+      @menu.brand.name
     </a>
 
     <button
@@ -55,14 +55,14 @@ signOutUrl: Option[String] = None
               target="_blank"
               rel="noreferrer noopener"
               >
-              @link.text
+              @link.name
           </a>
             } else {
             <a
                 class="nav-link @if(activeItemId.contains(link.id)) {active}"
                 href="@link.href"
                 >
-                @link.text
+                @link.name
             </a>
               }
         </li>
@@ -79,7 +79,7 @@ signOutUrl: Option[String] = None
                       data-bs-toggle="dropdown"
                       aria-expanded="false"
                       >
-                      @dropdown.text
+                      @dropdown.name
                   </a>
 
                     <ul class="dropdown-menu" aria-labelledby="@{dropdown.id}-dropdown">
@@ -92,14 +92,14 @@ signOutUrl: Option[String] = None
                             target="_blank"
                             rel="noreferrer noopener"
                             >
-                            @item.text
+                            @item.name
                         </a>
                           } else {
                           <a
                               class="dropdown-item @if(activeItemId.contains(item.id)) {active}"
                               href="@item.href"
                               >
-                              @item.text
+                              @item.name
                           </a>
                             }
                       </li>

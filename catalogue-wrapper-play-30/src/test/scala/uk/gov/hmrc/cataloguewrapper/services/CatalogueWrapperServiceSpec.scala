@@ -48,7 +48,7 @@ class CatalogueWrapperServiceSpec extends AnyWordSpec with Matchers with Mockito
   private val service = new CatalogueWrapperService(mockNavCache, mockConfig, layout)
 
   private val sampleMenu = BannerMenu(
-    brand = MenuLink("brand", "MDTP", "/"),
+    brand = MenuLink("brand", "MDTP", Some("/")),
     topLevelLinks = Seq.empty,
     dropdowns = Seq.empty
   )

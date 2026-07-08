@@ -55,9 +55,9 @@ class CatalogueMenuConnectorSpec
   given HeaderCarrier        = HeaderCarrier()
 
   val sampleMenu = BannerMenu(
-    brand = MenuLink("brand", "MDTP", "/"),
-    topLevelLinks = Seq(MenuLink("repos", "Repositories", "/repositories")),
-    dropdowns = Seq(MenuDropdown("explore", "Explore", Seq(MenuLink("teams", "Teams", "/teams"))))
+    brand = MenuLink("brand", "MDTP", Some("/")),
+    topLevelLinks = Seq(MenuLink("repos", "Repositories", Some("/repositories"))),
+    dropdowns = Seq(MenuDropdown("explore", "Explore", Seq(MenuLink("teams", "Teams", Some("/teams")))))
   )
 
   val sampleSearchTerms = Seq(SearchTerm("service", "foo-service", "/services/foo-service"))

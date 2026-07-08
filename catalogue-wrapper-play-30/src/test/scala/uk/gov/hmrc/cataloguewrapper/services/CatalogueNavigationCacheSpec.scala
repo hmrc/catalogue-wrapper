@@ -40,7 +40,7 @@ class CatalogueNavigationCacheSpec extends AnyWordSpec with Matchers with Mockit
   when(mockConfig.quickSearchRefreshThrottleSeconds).thenReturn(30L)
 
   private val sampleMenu = BannerMenu(
-    brand = MenuLink("brand", "MDTP", "/"),
+    brand = MenuLink("brand", "MDTP", Some("/")),
     topLevelLinks = Seq.empty,
     dropdowns = Seq.empty
   )
