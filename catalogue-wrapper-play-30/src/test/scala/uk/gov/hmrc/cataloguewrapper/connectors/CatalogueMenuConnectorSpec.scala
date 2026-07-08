@@ -36,7 +36,8 @@ class CatalogueMenuConnectorSpec
     with Matchers
     with ScalaFutures
     with WireMockSupport
-    with MockitoSugar:
+    with MockitoSugar
+    with TestData:
 
   lazy val app: Application =
     GuiceApplicationBuilder()
@@ -55,9 +56,152 @@ class CatalogueMenuConnectorSpec
   given HeaderCarrier        = HeaderCarrier()
 
   val sampleMenu = BannerMenu(
-    brand = MenuLink("brand", "MDTP", Some("/")),
-    topLevelLinks = Seq(MenuLink("repos", "Repositories", Some("/repositories"))),
-    dropdowns = Seq(MenuDropdown("explore", "Explore", Seq(MenuLink("teams", "Teams", Some("/teams")))))
+    brand = MenuLink("mdtp", "MDTP", Some("/"), external = false),
+    topLevelLinks = Seq(
+      MenuLink("users", "Users", Some("/users"), external = false),
+      MenuLink("teams", "Teams", Some("/teams"), external = false),
+      MenuLink("repositories", "Repositories", Some("/repositories"), external = false),
+      MenuLink("deployments", "Deployments", None, external = false),
+      MenuLink("shuttering", "Shuttering", None, external = false),
+      MenuLink("health", "Health", None, external = false),
+      MenuLink("explore", "Explore", None, external = false),
+      MenuLink("docs", "Docs", None, external = false)
+    ),
+    dropdowns = Seq(
+      MenuDropdown(
+        "users",
+        "Users",
+        Seq(
+          MenuLink("create-user", "Create a User", Some("/create-user"), external = false),
+          MenuLink("create-service-user", "Create a Service User", Some("/create-service-user"), external = false),
+          MenuLink("offboard-users", "Offboard Users", Some("/offboard-users"), external = false)
+        )
+      ),
+      MenuDropdown(
+        "deployments",
+        "Deployments",
+        Seq(
+          MenuLink("deploy-service", "Deploy Service", Some("/deploy-service"), external = false),
+          MenuLink("deployment-events", "Deployment Events", Some("/deployments/production"), external = false),
+          MenuLink("deployment-timeline", "Version Timeline", Some("/deployment-timeline"), external = false),
+          MenuLink("whats-running-where", "What's Running Where", Some("/whats-running-where"), external = false)
+        )
+      ),
+      MenuDropdown(
+        "shuttering",
+        "Shuttering",
+        Seq(
+          MenuLink(
+            "shutter-overview-frontend",
+            "Shutter Overview - Frontend",
+            Some("/shuttering-overview/frontend"),
+            external = false
+          ),
+          MenuLink(
+            "shutter-overview-api",
+            "Shutter Overview - Api",
+            Some("/shuttering-overview/api"),
+            external = false
+          ),
+          MenuLink(
+            "shutter-overview-rate",
+            "Shutter Overview - Rate",
+            Some("/shuttering-overview/rate"),
+            external = false
+          ),
+          MenuLink("shutter-events", "Shutter Events", Some("/shutter-events"), external = false)
+        )
+      ),
+      MenuDropdown(
+        "health",
+        "Health",
+        Seq(
+          MenuLink("platform-initiatives", "Platform Initiatives", Some("/platform-initiatives"), external = false),
+          MenuLink("bobby-rules", "Bobby Rules", Some("/bobbyrules"), external = false),
+          MenuLink("bobby-violations", "Bobby Violations", Some("/bobby-violations"), external = false),
+          MenuLink("leak-detection-rules", "Leak Detection - Rules", Some("/leak-detection"), external = false),
+          MenuLink(
+            "leak-detection-repositories",
+            "Leak Detection - Repositories",
+            Some("/leak-detection/repositories?includeViolations=true"),
+            external = false
+          ),
+          MenuLink(
+            "vulnerabilities",
+            "Vulnerabilities",
+            Some("/vulnerabilities?curationStatus=ACTION_REQUIRED"),
+            external = false
+          ),
+          MenuLink(
+            "vulnerabilities-services",
+            "Vulnerabilities - Services",
+            Some("/vulnerabilities/services"),
+            external = false
+          ),
+          MenuLink(
+            "vulnerabilities-timeline",
+            "Vulnerabilities - Timeline",
+            Some("/vulnerabilities/timeline?curationStatus=ACTION_REQUIRED"),
+            external = false
+          ),
+          MenuLink(
+            "pr-commenter-recommendations",
+            "PR-Commenter Recommendations",
+            Some("/pr-commenter/recommendations"),
+            external = false
+          ),
+          MenuLink(
+            "health-metrics-timeline",
+            "Health Metrics - Timeline",
+            Some("/health-metrics/timeline"),
+            external = false
+          ),
+          MenuLink("operational-metrics", "Operational Metrics", Some("/health-metrics"), external = false)
+        )
+      ),
+      MenuDropdown(
+        "explore",
+        "Explore",
+        Seq(
+          MenuLink("dependency-explorer", "Dependency Explorer", Some("/dependencyexplorer"), external = false),
+          MenuLink("jdk-explorer", "JDK Explorer", Some("/jdkexplorer"), external = false),
+          MenuLink("sbt-explorer", "SBT Explorer", Some("/sbtexplorer"), external = false),
+          MenuLink("search-by-url", "Search by URL", Some("/search#"), external = false),
+          MenuLink("search-config", "Search Config", Some("/config/search"), external = false),
+          MenuLink(
+            "search-commissioning-state",
+            "Search Commissioning State",
+            Some("/commissioning-state/search"),
+            external = false
+          ),
+          MenuLink("service-metrics", "Service Metrics", Some("/service-metrics"), external = false),
+          MenuLink("test-results", "Test Results", Some("/tests"), external = false),
+          MenuLink("config-warnings", "Config Warnings", Some("/config/warnings/search"), external = false),
+          MenuLink("cost-explorer", "Cost Explorer", Some("/cost-explorer"), external = false),
+          MenuLink("service-provision", "Service Provision", Some("/service-provision"), external = false)
+        )
+      ),
+      MenuDropdown(
+        "docs",
+        "Docs",
+        Seq(
+          MenuLink(
+            "mdtp-handbook",
+            "MDTP Handbook",
+            Some("https://docs.tax.service.gov.uk/mdtp-handbook/"),
+            external = true
+          ),
+          MenuLink(
+            "blog-posts",
+            "Blog Posts",
+            Some(
+              "https://confluence.tools.tax.service.gov.uk/dosearchsite.action?cql=(label=catalogue and type=blogpost) order by created desc"
+            ),
+            external = true
+          )
+        )
+      )
+    )
   )
 
   val sampleSearchTerms = Seq(SearchTerm("service", "foo-service", "/services/foo-service"))
@@ -65,16 +209,16 @@ class CatalogueMenuConnectorSpec
   "getNavigationData" should {
     "call /menu-bar/menu and /menu-bar/search-index and combine into NavigationData" in {
       stubFor(
-        get(urlEqualTo("/menu-bar/menu"))
+        get(urlEqualTo("/catalogue-config/menu-bar/menu"))
           .willReturn(
             aResponse()
               .withStatus(200)
               .withHeader("Content-Type", "application/json")
-              .withBody(Json.toJson(sampleMenu).toString())
+              .withBody(rawJson)
           )
       )
       stubFor(
-        get(urlEqualTo("/menu-bar/search-index"))
+        get(urlEqualTo("/catalogue-config/menu-bar/search-index"))
           .willReturn(
             aResponse()
               .withStatus(200)
@@ -84,13 +228,11 @@ class CatalogueMenuConnectorSpec
       )
 
       connector.getNavigationData().futureValue shouldBe NavigationData(sampleMenu, sampleSearchTerms)
-      verify(getRequestedFor(urlEqualTo("/menu-bar/menu")))
-      verify(getRequestedFor(urlEqualTo("/menu-bar/search-index")))
     }
 
     "decode NavigationData with an empty search index" in {
       stubFor(
-        get(urlEqualTo("/menu-bar/menu"))
+        get(urlEqualTo("/catalogue-config/menu-bar/menu"))
           .willReturn(
             aResponse()
               .withStatus(200)
@@ -99,7 +241,7 @@ class CatalogueMenuConnectorSpec
           )
       )
       stubFor(
-        get(urlEqualTo("/menu-bar/search-index"))
+        get(urlEqualTo("/catalogue-config/menu-bar/search-index"))
           .willReturn(
             aResponse()
               .withStatus(200)
