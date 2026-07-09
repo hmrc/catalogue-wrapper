@@ -26,7 +26,7 @@ import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.cataloguewrapper.config.CatalogueWrapperConfig
-import uk.gov.hmrc.cataloguewrapper.models.{BannerMenu, MenuLink, NavigationData, SearchTerm}
+import uk.gov.hmrc.cataloguewrapper.models.{BannerMenu, MenuLink, NavigationData, SearchTerm, TopMenu}
 import uk.gov.hmrc.cataloguewrapper.search.SearchIndex
 import uk.gov.hmrc.cataloguewrapper.services.CatalogueNavigationCache
 import uk.gov.hmrc.http.HeaderCarrier
@@ -52,7 +52,11 @@ class QuickSearchControllerSpec extends AnyWordSpec with Matchers with MockitoSu
   )
 
   private val sampleNav = NavigationData(
-    menu = BannerMenu(brand = MenuLink("brand", "MDTP", Some("/")), topLevelLinks = Seq.empty, dropdowns = Seq.empty),
+    menu = BannerMenu(
+      brand = TopMenu("brand", "MDTP", Some("/")),
+      topLevelLinks = Seq.empty,
+      dropdowns = Seq.empty
+    ),
     searchIndex = Seq(SearchTerm("service", "foo-service", "/services/foo-service"))
   )
 

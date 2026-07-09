@@ -27,7 +27,7 @@ signOutUrl: Option[String] = None
 
 <nav class="navbar navbar-expand-md navbar-dark bg-black">
   <div class="container">
-    <a class="navbar-brand" href="@menu.brand.href">
+    <a class="navbar-brand" href="@menu.brand.href.getOrElse("/")">
       @menu.brand.name
     </a>
 
@@ -51,7 +51,7 @@ signOutUrl: Option[String] = None
           @if(link.external) {
           <a
               class="nav-link @if(activeItemId.contains(link.id)) {active}"
-              href="@link.href"
+              href="@link.href.getOrElse("#")"
               target="_blank"
               rel="noreferrer noopener"
               >
@@ -60,7 +60,7 @@ signOutUrl: Option[String] = None
             } else {
             <a
                 class="nav-link @if(activeItemId.contains(link.id)) {active}"
-                href="@link.href"
+                href="@link.href.getOrElse("#")"
                 >
                 @link.name
             </a>
@@ -88,7 +88,7 @@ signOutUrl: Option[String] = None
                         @if(item.external) {
                         <a
                             class="dropdown-item @if(activeItemId.contains(item.id)) {active}"
-                            href="@item.href"
+                            href="@item.href.getOrElse("#")"
                             target="_blank"
                             rel="noreferrer noopener"
                             >
@@ -97,7 +97,7 @@ signOutUrl: Option[String] = None
                           } else {
                           <a
                               class="dropdown-item @if(activeItemId.contains(item.id)) {active}"
-                              href="@item.href"
+                              href="@item.href.getOrElse("#")"
                               >
                               @item.name
                           </a>

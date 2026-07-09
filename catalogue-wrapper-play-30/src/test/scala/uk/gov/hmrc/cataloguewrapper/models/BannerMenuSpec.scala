@@ -25,13 +25,14 @@ class BannerMenuSpec extends AnyWordSpec with Matchers:
   "BannerMenu JSON" should {
     "round-trip through reads/writes" in {
       val menu   = BannerMenu(
-        brand = MenuLink("brand", "MDTP", Some("/"), external = false),
-        topLevelLinks = Seq(MenuLink("repos", "Repositories", Some("/repositories"))),
+        brand = TopMenu("brand", "MDTP", Some("/"), external = false),
+        topLevelLinks = Seq(TopMenu("repos", "Repositories", "/repositories")),
         dropdowns = Seq(
           MenuDropdown(
             "explore",
             "Explore",
-            Seq(MenuLink("teams", "Teams", Some("/teams")))
+            None,
+            Seq(Page("Teams", "teams", "/teams"))
           )
         )
       )
@@ -41,13 +42,27 @@ class BannerMenuSpec extends AnyWordSpec with Matchers:
     }
 
     "decode external links correctly" in {
-      val json = Json.parse("""
-        {
-          "brand": {"id":"brand","name":"MDTP","href":"/","external":false},
-          "topLevelLinks": [{"id":"ext","name":"External","href":"https://example.com","external":true}],
-          "dropdowns": []
-        }
-      """)
+      val json = Json.parse(
+        """{
+          |  "brand": {
+          |    "id": "brand",
+          |    "name": "MDTP",
+          |    "href": "/",
+          |    "external": false,
+          |    "_type": "TopMenu"
+          |  },
+          |  "topLevelLinks": [
+          |    {
+          |      "id": "ext",
+          |      "name": "External",
+          |      "href": "https://example.com",
+          |      "external": true,
+          |      "_type": "TopMenu"
+          |    }
+          |  ],
+          |  "dropdowns": []
+          |}""".stripMargin
+      )
       val menu = json.as[BannerMenu]
       menu.topLevelLinks.head.external shouldBe true
     }
@@ -55,7 +70,7 @@ class BannerMenuSpec extends AnyWordSpec with Matchers:
 
   "MenuLink JSON" should {
     "default external to false when absent" in {
-      val json = Json.parse("""{"id":"foo","name":"Foo","href":"/foo"}""")
+      val json = Json.parse("""{"id":"foo","name":"Foo","href":"/foo","_type":"TopMenu"}""")
       json.as[MenuLink].external shouldBe false
     }
 
@@ -64,61 +79,61 @@ class BannerMenuSpec extends AnyWordSpec with Matchers:
                    |  "brand": {
                    |    "name": "MDTP",
                    |    "id": "mdtp",
-                   |    "description": "MDTP",
                    |    "href": "/",
-                   |    "external": false
+                   |    "external": false,
+                   |    "_type": "TopMenu"
                    |  },
                    |  "topLevelLinks": [
                    |    {
                    |      "name": "Users",
                    |      "id": "users",
-                   |      "description": "View and manage users",
                    |      "href": "/users",
-                   |      "external": false
+                   |      "external": false,
+                   |      "_type": "TopMenu"
                    |    },
                    |    {
                    |      "name": "Teams",
                    |      "id": "teams",
-                   |      "description": "View and manage teams",
                    |      "href": "/teams",
-                   |      "external": false
+                   |      "external": false,
+                   |      "_type": "TopMenu"
                    |    },
                    |    {
                    |      "name": "Repositories",
                    |      "id": "repositories",
-                   |      "description": "View and manage repositories",
                    |      "href": "/repositories",
-                   |      "external": false
+                   |      "external": false,
+                   |      "_type": "TopMenu"
                    |    },
                    |    {
                    |      "name": "Deployments",
                    |      "id": "deployments",
-                   |      "description": "View and manage deployments",
-                   |      "external": false
+                   |      "external": false,
+                   |      "_type": "TopMenu"
                    |    },
                    |    {
                    |      "name": "Shuttering",
                    |      "id": "shuttering",
-                   |      "description": "View and manage shuttering",
-                   |      "external": false
+                   |      "external": false,
+                   |      "_type": "TopMenu"
                    |    },
                    |    {
                    |      "name": "Health",
                    |      "id": "health",
-                   |      "description": "View and manage health",
-                   |      "external": false
+                   |      "external": false,
+                   |      "_type": "TopMenu"
                    |    },
                    |    {
                    |      "name": "Explore",
                    |      "id": "explore",
-                   |      "description": "Explore services",
-                   |      "external": false
+                   |      "external": false,
+                   |      "_type": "TopMenu"
                    |    },
                    |    {
                    |      "name": "Docs",
                    |      "id": "docs",
-                   |      "description": "View documentation",
-                   |      "external": false
+                   |      "external": false,
+                   |      "_type": "TopMenu"
                    |    }
                    |  ],
                    |  "dropdowns": [
@@ -128,22 +143,25 @@ class BannerMenuSpec extends AnyWordSpec with Matchers:
                    |      "href": "/users",
                    |      "items": [
                    |        {
-                   |          "id": "create-user",
-                   |          "name": "Create a User",
+                   |          "name": "create-user",
+                   |          "id": "Create a User",
                    |          "href": "/create-user",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        },
                    |        {
-                   |          "id": "create-service-user",
-                   |          "name": "Create a Service User",
+                   |          "name": "create-service-user",
+                   |          "id": "Create a Service User",
                    |          "href": "/create-service-user",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        },
                    |        {
-                   |          "id": "offboard-users",
-                   |          "name": "Offboard Users",
+                   |          "name": "offboard-users",
+                   |          "id": "Offboard Users",
                    |          "href": "/offboard-users",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        }
                    |      ],
                    |      "dropDownRole": []
@@ -153,28 +171,32 @@ class BannerMenuSpec extends AnyWordSpec with Matchers:
                    |      "name": "Deployments",
                    |      "items": [
                    |        {
-                   |          "id": "deploy-service",
-                   |          "name": "Deploy Service",
+                   |          "name": "deploy-service",
+                   |          "id": "Deploy Service",
                    |          "href": "/deploy-service",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        },
                    |        {
-                   |          "id": "deployment-events",
-                   |          "name": "Deployment Events",
+                   |          "name": "deployment-events",
+                   |          "id": "Deployment Events",
                    |          "href": "/deployments/production",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        },
                    |        {
-                   |          "id": "deployment-timeline",
-                   |          "name": "Version Timeline",
+                   |          "name": "deployment-timeline",
+                   |          "id": "Version Timeline",
                    |          "href": "/deployment-timeline",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        },
                    |        {
-                   |          "id": "whats-running-where",
-                   |          "name": "What's Running Where",
+                   |          "name": "whats-running-where",
+                   |          "id": "What's Running Where",
                    |          "href": "/whats-running-where",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        }
                    |      ],
                    |      "dropDownRole": []
@@ -184,28 +206,32 @@ class BannerMenuSpec extends AnyWordSpec with Matchers:
                    |      "name": "Shuttering",
                    |      "items": [
                    |        {
-                   |          "id": "shutter-overview-frontend",
-                   |          "name": "Shutter Overview - Frontend",
+                   |          "name": "shutter-overview-frontend",
+                   |          "id": "Shutter Overview - Frontend",
                    |          "href": "/shuttering-overview/frontend",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        },
                    |        {
-                   |          "id": "shutter-overview-api",
-                   |          "name": "Shutter Overview - Api",
+                   |          "name": "shutter-overview-api",
+                   |          "id": "Shutter Overview - Api",
                    |          "href": "/shuttering-overview/api",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        },
                    |        {
-                   |          "id": "shutter-overview-rate",
-                   |          "name": "Shutter Overview - Rate",
+                   |          "name": "shutter-overview-rate",
+                   |          "id": "Shutter Overview - Rate",
                    |          "href": "/shuttering-overview/rate",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        },
                    |        {
-                   |          "id": "shutter-events",
-                   |          "name": "Shutter Events",
+                   |          "name": "shutter-events",
+                   |          "id": "Shutter Events",
                    |          "href": "/shutter-events",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        }
                    |      ],
                    |      "dropDownRole": []
@@ -215,70 +241,81 @@ class BannerMenuSpec extends AnyWordSpec with Matchers:
                    |      "name": "Health",
                    |      "items": [
                    |        {
-                   |          "id": "platform-initiatives",
-                   |          "name": "Platform Initiatives",
+                   |          "name": "platform-initiatives",
+                   |          "id": "Platform Initiatives",
                    |          "href": "/platform-initiatives",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        },
                    |        {
-                   |          "id": "bobby-rules",
-                   |          "name": "Bobby Rules",
+                   |          "name": "bobby-rules",
+                   |          "id": "Bobby Rules",
                    |          "href": "/bobbyrules",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        },
                    |        {
-                   |          "id": "bobby-violations",
-                   |          "name": "Bobby Violations",
+                   |          "name": "bobby-violations",
+                   |          "id": "Bobby Violations",
                    |          "href": "/bobby-violations",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        },
                    |        {
-                   |          "id": "leak-detection-rules",
-                   |          "name": "Leak Detection - Rules",
+                   |          "name": "leak-detection-rules",
+                   |          "id": "Leak Detection - Rules",
                    |          "href": "/leak-detection",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        },
                    |        {
-                   |          "id": "leak-detection-repositories",
-                   |          "name": "Leak Detection - Repositories",
+                   |          "name": "leak-detection-repositories",
+                   |          "id": "Leak Detection - Repositories",
                    |          "href": "/leak-detection/repositories?includeViolations=true",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        },
                    |        {
-                   |          "id": "vulnerabilities",
-                   |          "name": "Vulnerabilities",
+                   |          "name": "vulnerabilities",
+                   |          "id": "Vulnerabilities",
                    |          "href": "/vulnerabilities?curationStatus=ACTION_REQUIRED",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        },
                    |        {
-                   |          "id": "vulnerabilities-services",
-                   |          "name": "Vulnerabilities - Services",
+                   |          "name": "vulnerabilities-services",
+                   |          "id": "Vulnerabilities - Services",
                    |          "href": "/vulnerabilities/services",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        },
                    |        {
-                   |          "id": "vulnerabilities-timeline",
-                   |          "name": "Vulnerabilities - Timeline",
+                   |          "name": "vulnerabilities-timeline",
+                   |          "id": "Vulnerabilities - Timeline",
                    |          "href": "/vulnerabilities/timeline?curationStatus=ACTION_REQUIRED",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        },
                    |        {
-                   |          "id": "pr-commenter-recommendations",
-                   |          "name": "PR-Commenter Recommendations",
+                   |          "name": "pr-commenter-recommendations",
+                   |          "id": "PR-Commenter Recommendations",
                    |          "href": "/pr-commenter/recommendations",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        },
                    |        {
-                   |          "id": "health-metrics-timeline",
-                   |          "name": "Health Metrics - Timeline",
+                   |          "name": "health-metrics-timeline",
+                   |          "id": "Health Metrics - Timeline",
                    |          "href": "/health-metrics/timeline",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        },
                    |        {
-                   |          "id": "operational-metrics",
-                   |          "name": "Operational Metrics",
+                   |          "name": "operational-metrics",
+                   |          "id": "Operational Metrics",
                    |          "href": "/health-metrics",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        }
                    |      ],
                    |      "dropDownRole": []
@@ -288,70 +325,81 @@ class BannerMenuSpec extends AnyWordSpec with Matchers:
                    |      "name": "Explore",
                    |      "items": [
                    |        {
-                   |          "id": "dependency-explorer",
-                   |          "name": "Dependency Explorer",
+                   |          "name": "dependency-explorer",
+                   |          "id": "Dependency Explorer",
                    |          "href": "/dependencyexplorer",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        },
                    |        {
-                   |          "id": "jdk-explorer",
-                   |          "name": "JDK Explorer",
+                   |          "name": "jdk-explorer",
+                   |          "id": "JDK Explorer",
                    |          "href": "/jdkexplorer",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        },
                    |        {
-                   |          "id": "sbt-explorer",
-                   |          "name": "SBT Explorer",
+                   |          "name": "sbt-explorer",
+                   |          "id": "SBT Explorer",
                    |          "href": "/sbtexplorer",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        },
                    |        {
-                   |          "id": "search-by-url",
-                   |          "name": "Search by URL",
+                   |          "name": "search-by-url",
+                   |          "id": "Search by URL",
                    |          "href": "/search#",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        },
                    |        {
-                   |          "id": "search-config",
-                   |          "name": "Search Config",
+                   |          "name": "search-config",
+                   |          "id": "Search Config",
                    |          "href": "/config/search",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        },
                    |        {
-                   |          "id": "search-commissioning-state",
-                   |          "name": "Search Commissioning State",
+                   |          "name": "search-commissioning-state",
+                   |          "id": "Search Commissioning State",
                    |          "href": "/commissioning-state/search",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        },
                    |        {
-                   |          "id": "service-metrics",
-                   |          "name": "Service Metrics",
+                   |          "name": "service-metrics",
+                   |          "id": "Service Metrics",
                    |          "href": "/service-metrics",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        },
                    |        {
-                   |          "id": "test-results",
-                   |          "name": "Test Results",
+                   |          "name": "test-results",
+                   |          "id": "Test Results",
                    |          "href": "/tests",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        },
                    |        {
-                   |          "id": "config-warnings",
-                   |          "name": "Config Warnings",
+                   |          "name": "config-warnings",
+                   |          "id": "Config Warnings",
                    |          "href": "/config/warnings/search",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        },
                    |        {
-                   |          "id": "cost-explorer",
-                   |          "name": "Cost Explorer",
+                   |          "name": "cost-explorer",
+                   |          "id": "Cost Explorer",
                    |          "href": "/cost-explorer",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        },
                    |        {
-                   |          "id": "service-provision",
-                   |          "name": "Service Provision",
+                   |          "name": "service-provision",
+                   |          "id": "Service Provision",
                    |          "href": "/service-provision",
-                   |          "external": false
+                   |          "external": false,
+                   |          "_type": "Page"
                    |        }
                    |      ],
                    |      "dropDownRole": []
@@ -361,16 +409,18 @@ class BannerMenuSpec extends AnyWordSpec with Matchers:
                    |      "name": "Docs",
                    |      "items": [
                    |        {
-                   |          "id": "mdtp-handbook",
                    |          "name": "MDTP Handbook",
+                   |          "id": "mdtp-handbook",
                    |          "href": "https://docs.tax.service.gov.uk/mdtp-handbook/",
-                   |          "external": true
+                   |          "external": true,
+                   |          "_type": "Page"
                    |        },
                    |        {
-                   |          "id": "blog-posts",
                    |          "name": "Blog Posts",
+                   |          "id": "blog-posts",
                    |          "href": "https://confluence.tools.tax.service.gov.uk/dosearchsite.action?cql=(label=catalogue and type=blogpost) order by created desc",
-                   |          "external": true
+                   |          "external": true,
+                   |          "_type": "Page"
                    |        }
                    |      ],
                    |      "dropDownRole": []
@@ -390,4 +440,5 @@ class BannerMenuSpec extends AnyWordSpec with Matchers:
       }
 
     }
+
   }

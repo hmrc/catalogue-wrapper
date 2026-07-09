@@ -25,7 +25,7 @@ import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
-import uk.gov.hmrc.cataloguewrapper.models.{BannerMenu, MenuDropdown, MenuLink, NavigationData, SearchTerm}
+import uk.gov.hmrc.cataloguewrapper.models.{BannerMenu, MenuDropdown, NavigationData, Page, SearchTerm, TopMenu}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.test.WireMockSupport
@@ -55,146 +55,106 @@ class CatalogueMenuConnectorSpec
   private lazy val connector = app.injector.instanceOf[CatalogueMenuConnector]
   given HeaderCarrier        = HeaderCarrier()
 
-  val sampleMenu = BannerMenu(
-    brand = MenuLink("mdtp", "MDTP", Some("/"), external = false),
+  val sampleMenu: BannerMenu = BannerMenu(
+    brand = TopMenu(
+      name = "MDTP",
+      id = "mdtp",
+      href = Some("/")
+    ),
     topLevelLinks = Seq(
-      MenuLink("users", "Users", Some("/users"), external = false),
-      MenuLink("teams", "Teams", Some("/teams"), external = false),
-      MenuLink("repositories", "Repositories", Some("/repositories"), external = false),
-      MenuLink("deployments", "Deployments", None, external = false),
-      MenuLink("shuttering", "Shuttering", None, external = false),
-      MenuLink("health", "Health", None, external = false),
-      MenuLink("explore", "Explore", None, external = false),
-      MenuLink("docs", "Docs", None, external = false)
+      TopMenu(name = "Users", id = "users", href = Some("/users")),
+      TopMenu(name = "Teams", id = "teams", href = Some("/teams")),
+      TopMenu(name = "Repositories", id = "repositories", href = Some("/repositories")),
+      TopMenu(name = "Deployments", id = "deployments", href = None),
+      TopMenu(name = "Shuttering", id = "shuttering", href = None),
+      TopMenu(name = "Health", id = "health", href = None),
+      TopMenu(name = "Explore", id = "explore", href = None),
+      TopMenu(name = "Docs", id = "docs", href = None)
     ),
     dropdowns = Seq(
       MenuDropdown(
         "users",
         "Users",
+        Some("/users"),
         Seq(
-          MenuLink("create-user", "Create a User", Some("/create-user"), external = false),
-          MenuLink("create-service-user", "Create a Service User", Some("/create-service-user"), external = false),
-          MenuLink("offboard-users", "Offboard Users", Some("/offboard-users"), external = false)
-        )
+          Page("Create a User", "create-user", "/create-user"),
+          Page("Create a Service User", "create-service-user", "/create-service-user"),
+          Page("Offboard Users", "offboard-users", "/offboard-users")
+          )
       ),
       MenuDropdown(
         "deployments",
         "Deployments",
+        None,
         Seq(
-          MenuLink("deploy-service", "Deploy Service", Some("/deploy-service"), external = false),
-          MenuLink("deployment-events", "Deployment Events", Some("/deployments/production"), external = false),
-          MenuLink("deployment-timeline", "Version Timeline", Some("/deployment-timeline"), external = false),
-          MenuLink("whats-running-where", "What's Running Where", Some("/whats-running-where"), external = false)
-        )
+          Page("Deploy Service", "deploy-service", "/deploy-service"),
+          Page("Deployment Events", "deployment-events", "/deployments/production"),
+          Page("Version Timeline", "deployment-timeline", "/deployment-timeline"),
+          Page("What's Running Where", "whats-running-where", "/whats-running-where")
+          )
       ),
       MenuDropdown(
         "shuttering",
         "Shuttering",
+        None,
         Seq(
-          MenuLink(
-            "shutter-overview-frontend",
-            "Shutter Overview - Frontend",
-            Some("/shuttering-overview/frontend"),
-            external = false
-          ),
-          MenuLink(
-            "shutter-overview-api",
-            "Shutter Overview - Api",
-            Some("/shuttering-overview/api"),
-            external = false
-          ),
-          MenuLink(
-            "shutter-overview-rate",
-            "Shutter Overview - Rate",
-            Some("/shuttering-overview/rate"),
-            external = false
-          ),
-          MenuLink("shutter-events", "Shutter Events", Some("/shutter-events"), external = false)
-        )
+          Page("Shutter Overview - Frontend", "shutter-overview-frontend", "/shuttering-overview/frontend"),
+          Page("Shutter Overview - Api", "shutter-overview-api", "/shuttering-overview/api"),
+          Page("Shutter Overview - Rate", "shutter-overview-rate", "/shuttering-overview/rate"),
+          Page("Shutter Events", "shutter-events", "/shutter-events")
+          )
       ),
       MenuDropdown(
         "health",
         "Health",
+        None,
         Seq(
-          MenuLink("platform-initiatives", "Platform Initiatives", Some("/platform-initiatives"), external = false),
-          MenuLink("bobby-rules", "Bobby Rules", Some("/bobbyrules"), external = false),
-          MenuLink("bobby-violations", "Bobby Violations", Some("/bobby-violations"), external = false),
-          MenuLink("leak-detection-rules", "Leak Detection - Rules", Some("/leak-detection"), external = false),
-          MenuLink(
-            "leak-detection-repositories",
-            "Leak Detection - Repositories",
-            Some("/leak-detection/repositories?includeViolations=true"),
-            external = false
-          ),
-          MenuLink(
-            "vulnerabilities",
-            "Vulnerabilities",
-            Some("/vulnerabilities?curationStatus=ACTION_REQUIRED"),
-            external = false
-          ),
-          MenuLink(
-            "vulnerabilities-services",
-            "Vulnerabilities - Services",
-            Some("/vulnerabilities/services"),
-            external = false
-          ),
-          MenuLink(
-            "vulnerabilities-timeline",
-            "Vulnerabilities - Timeline",
-            Some("/vulnerabilities/timeline?curationStatus=ACTION_REQUIRED"),
-            external = false
-          ),
-          MenuLink(
-            "pr-commenter-recommendations",
-            "PR-Commenter Recommendations",
-            Some("/pr-commenter/recommendations"),
-            external = false
-          ),
-          MenuLink(
-            "health-metrics-timeline",
-            "Health Metrics - Timeline",
-            Some("/health-metrics/timeline"),
-            external = false
-          ),
-          MenuLink("operational-metrics", "Operational Metrics", Some("/health-metrics"), external = false)
-        )
+          Page("Platform Initiatives", "platform-initiatives", "/platform-initiatives"),
+          Page("Bobby Rules", "bobby-rules", "/bobbyrules"),
+          Page("Bobby Violations", "bobby-violations", "/bobby-violations"),
+          Page("Leak Detection - Rules", "leak-detection-rules", "/leak-detection"),
+          Page("Leak Detection - Repositories", "leak-detection-repositories", "/leak-detection/repositories?includeViolations=true"),
+          Page("Vulnerabilities", "vulnerabilities", "/vulnerabilities?curationStatus=ACTION_REQUIRED"),
+          Page("Vulnerabilities - Services", "vulnerabilities-services", "/vulnerabilities/services"),
+          Page("Vulnerabilities - Timeline", "vulnerabilities-timeline", "/vulnerabilities/timeline?curationStatus=ACTION_REQUIRED"),
+          Page("PR-Commenter Recommendations", "pr-commenter-recommendations", "/pr-commenter/recommendations"),
+          Page("Health Metrics - Timeline", "health-metrics-timeline", "/health-metrics/timeline"),
+          Page("Operational Metrics", "operational-metrics", "/health-metrics")
+          )
       ),
       MenuDropdown(
         "explore",
         "Explore",
+        None,
         Seq(
-          MenuLink("dependency-explorer", "Dependency Explorer", Some("/dependencyexplorer"), external = false),
-          MenuLink("jdk-explorer", "JDK Explorer", Some("/jdkexplorer"), external = false),
-          MenuLink("sbt-explorer", "SBT Explorer", Some("/sbtexplorer"), external = false),
-          MenuLink("search-by-url", "Search by URL", Some("/search#"), external = false),
-          MenuLink("search-config", "Search Config", Some("/config/search"), external = false),
-          MenuLink(
-            "search-commissioning-state",
-            "Search Commissioning State",
-            Some("/commissioning-state/search"),
-            external = false
-          ),
-          MenuLink("service-metrics", "Service Metrics", Some("/service-metrics"), external = false),
-          MenuLink("test-results", "Test Results", Some("/tests"), external = false),
-          MenuLink("config-warnings", "Config Warnings", Some("/config/warnings/search"), external = false),
-          MenuLink("cost-explorer", "Cost Explorer", Some("/cost-explorer"), external = false),
-          MenuLink("service-provision", "Service Provision", Some("/service-provision"), external = false)
-        )
+          Page("Dependency Explorer", "dependency-explorer", "/dependencyexplorer"),
+          Page("JDK Explorer", "jdk-explorer", "/jdkexplorer"),
+          Page("SBT Explorer", "sbt-explorer", "/sbtexplorer"),
+          Page("Search by URL", "search-by-url", "/search#"),
+          Page("Search Config", "search-config", "/config/search"),
+          Page("Search Commissioning State", "search-commissioning-state", "/commissioning-state/search"),
+          Page("Service Metrics", "service-metrics", "/service-metrics"),
+          Page("Test Results", "test-results", "/tests"),
+          Page("Config Warnings", "config-warnings", "/config/warnings/search"),
+          Page("Cost Explorer", "cost-explorer", "/cost-explorer"),
+          Page("Service Provision", "service-provision", "/service-provision")
+          )
       ),
       MenuDropdown(
         "docs",
         "Docs",
+        None,
         Seq(
-          MenuLink(
-            "mdtp-handbook",
-            "MDTP Handbook",
-            Some("https://docs.tax.service.gov.uk/mdtp-handbook/"),
+          Page(
+            name = "MDTP Handbook",
+            id = "mdtp-handbook",
+            href = Some("https://docs.tax.service.gov.uk/mdtp-handbook/"),
             external = true
           ),
-          MenuLink(
-            "blog-posts",
-            "Blog Posts",
-            Some(
+          Page(
+            name = "Blog Posts",
+            id = "blog-posts",
+            href = Some(
               "https://confluence.tools.tax.service.gov.uk/dosearchsite.action?cql=(label=catalogue and type=blogpost) order by created desc"
             ),
             external = true
@@ -204,7 +164,7 @@ class CatalogueMenuConnectorSpec
     )
   )
 
-  val sampleSearchTerms = Seq(SearchTerm("service", "foo-service", "/services/foo-service"))
+  val sampleSearchTerms: Seq[SearchTerm] = Seq(SearchTerm("service", "foo-service", "/services/foo-service"))
 
   "getNavigationData" should {
     "call /menu-bar/menu and /menu-bar/search-index and combine into NavigationData" in {

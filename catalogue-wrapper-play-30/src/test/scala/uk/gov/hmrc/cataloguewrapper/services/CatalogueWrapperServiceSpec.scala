@@ -28,7 +28,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers.stubMessages
 import play.twirl.api.Html
 import uk.gov.hmrc.cataloguewrapper.config.CatalogueWrapperConfig
-import uk.gov.hmrc.cataloguewrapper.models.{BannerMenu, MenuLink, NavigationData}
+import uk.gov.hmrc.cataloguewrapper.models.{BannerMenu, NavigationData, TopMenu}
 import uk.gov.hmrc.cataloguewrapper.views.html.{CatalogueScripts, CatalogueStylesheets, StandardCatalogueLayout}
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -48,7 +48,7 @@ class CatalogueWrapperServiceSpec extends AnyWordSpec with Matchers with Mockito
   private val service = new CatalogueWrapperService(mockNavCache, mockConfig, layout)
 
   private val sampleMenu = BannerMenu(
-    brand = MenuLink("brand", "MDTP", Some("/")),
+    brand = TopMenu(name = "MDTP", id = "brand", href = Some("/")),
     topLevelLinks = Seq.empty,
     dropdowns = Seq.empty
   )
@@ -135,6 +135,20 @@ class CatalogueWrapperServiceSpec extends AnyWordSpec with Matchers with Mockito
       val result = service.catalogueMenuBarWithMenu(sampleMenu, activeItemId = Some("repos"))
       result.body should include("MDTP")
       result.body should not include "<html"
+    }
+
+    "use # when a menu link href is missing" in {
+      when(mockConfig.quickSearchPath)
+        .thenReturn("/catalogue-wrapper/quicksearch")
+      when(mockConfig.quickSearchMinTermLength)
+        .thenReturn(3)
+
+      val menuWithMissingHref = sampleMenu.copy(
+        topLevelLinks = Seq(TopMenu(name = "Repositories", id = "repos", href = None))
+      )
+
+      val result = service.catalogueMenuBarWithMenu(menuWithMissingHref, activeItemId = Some("repos"))
+      result.body should include("href=\"#\"")
     }
   }
 

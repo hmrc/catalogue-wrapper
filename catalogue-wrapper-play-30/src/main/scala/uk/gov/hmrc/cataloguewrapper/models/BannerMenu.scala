@@ -15,43 +15,81 @@
  */
 
 package uk.gov.hmrc.cataloguewrapper.models
+import play.api.libs.json.{Format, Json, JsonConfiguration, JsonNaming}
 
-import play.api.libs.json.{Json, OFormat}
+sealed trait MenuLink {
+  def name: String
 
-final case class MenuLink(
-    id: String,
-    name: String,
-    href: Option[String],
-    external: Boolean = false
-)
+  def id: String
+
+  def href: Option[String]
+
+  def external: Boolean
+}
 
 object MenuLink:
-  given OFormat[MenuLink] = Json.using[Json.WithDefaultValues].format[MenuLink]
-
-final case class MenuDropdown(
-    id: String,
-    name: String,
-    items: Seq[MenuLink]
-)
-
-object MenuDropdown:
-  given OFormat[MenuDropdown] = Json.format[MenuDropdown]
+  given JsonConfiguration        = JsonConfiguration(
+    typeNaming = JsonNaming(_.split("\\.").last)
+    )
+  given format: Format[MenuLink] = Json.format[MenuLink]
 
 final case class BannerMenu(
-    brand: MenuLink,
-    topLevelLinks: Seq[MenuLink],
-    dropdowns: Seq[MenuDropdown]
+  brand          :MenuLink,
+  topLevelLinks  :Seq[MenuLink],
+  dropdowns      :Seq[MenuDropdown]
 )
 
 object BannerMenu:
-  given OFormat[BannerMenu] = Json.format[BannerMenu]
+  given format: Format[BannerMenu] =
+    Json.format[BannerMenu]
 
   val empty: BannerMenu =
     BannerMenu(
-      brand = MenuLink("brand", "MDTP", Some("/")),
+      brand = TopMenu("brand", "MDTP", Some("/")),
       topLevelLinks = Seq.empty,
       dropdowns = Seq.empty
-    )
+      )
+
+final case class MenuDropdown(
+  id           :String,
+  name         :String,
+  href         :Option[String],
+  items        :Seq[MenuLink],
+  dropDownRole : Seq[Role] = Nil
+)
+
+object MenuDropdown {
+  given format: Format[MenuDropdown] =
+    Json.format[MenuDropdown]
+}
+
+final case class TopMenu(
+  name        :String,
+  id          :String,
+  href        :Option[String],
+  external    :Boolean = false
+) extends MenuLink
+
+object TopMenu:
+  given format: Format[TopMenu]                                                   = Json.format[TopMenu]
+  def apply(name: String, id: String, href: String): TopMenu =
+    TopMenu(name, id, Some(href))
+
+  def apply(name: String, id: String): TopMenu =
+    TopMenu(name, id, None)
+
+final case class Page(
+  name        :String,
+  id          :String,
+  href        :Option[String],
+  external    :Boolean = false
+) extends MenuLink
+
+object Page:
+  given format: Format[Page] = Json.format[Page]
+
+  def apply(name: String, id: String, href: String): Page =
+    Page(name, id, Some(href))
 
 final case class SearchTerm(
     linkType: String,
@@ -65,7 +103,7 @@ final case class SearchTerm(
     Set(name, linkType).union(hints).map(SearchTerm.normalise)
 
 object SearchTerm:
-  given OFormat[SearchTerm] = Json.using[Json.WithDefaultValues].format[SearchTerm]
+  given Format[SearchTerm] = Json.using[Json.WithDefaultValues].format[SearchTerm]
 
   def normalise(value: String): String =
     value.toLowerCase.replaceAll("[ \\-_]", "")
@@ -76,7 +114,7 @@ final case class NavigationData(
 )
 
 object NavigationData:
-  given OFormat[NavigationData] =
+  given Format[NavigationData] =
     Json.using[Json.WithDefaultValues].format[NavigationData]
 
   val empty: NavigationData =
