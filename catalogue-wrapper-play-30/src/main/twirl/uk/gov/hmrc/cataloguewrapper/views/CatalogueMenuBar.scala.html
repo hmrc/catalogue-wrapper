@@ -14,7 +14,7 @@
  * limitations under the License.
  *@
 
-@import uk.gov.hmrc.cataloguewrapper.models.BannerMenu
+@import uk.gov.hmrc.cataloguewrapper.models.{BannerMenu, Page}
 
 @(
 menu: BannerMenu,
@@ -69,7 +69,7 @@ signOutUrl: Option[String] = None
         }
 
         @for(dropdown <- menu.dropdowns) {
-                @defining(dropdown.items.exists(item => activeItemId.contains(item.id))) { dropdownActive =>
+                @defining(dropdown.items.collect { case page: Page => page.id }.exists(activeItemId.contains)) { dropdownActive =>
                 <li class="nav-item dropdown">
                   <a
                       id="@{dropdown.id}-dropdown"
@@ -84,25 +84,31 @@ signOutUrl: Option[String] = None
 
                     <ul class="dropdown-menu" aria-labelledby="@{dropdown.id}-dropdown">
                       @for(item <- dropdown.items) {
+                      @if(item.isSeparator) {
+                      <li><hr class="dropdown-divider"></li>
+                      } else {
+                      @defining(item.asPage.get) { page =>
                       <li>
-                        @if(item.external) {
+                        @if(page.external) {
                         <a
-                            class="dropdown-item @if(activeItemId.contains(item.id)) {active}"
-                            href="@item.href.getOrElse("#")"
+                            class="dropdown-item @if(activeItemId.contains(page.id)) {active}"
+                            href="@page.href.getOrElse("#")"
                             target="_blank"
                             rel="noreferrer noopener"
                             >
-                            @item.name
+                            @page.name
                         </a>
                           } else {
                           <a
-                              class="dropdown-item @if(activeItemId.contains(item.id)) {active}"
-                              href="@item.href.getOrElse("#")"
+                              class="dropdown-item @if(activeItemId.contains(page.id)) {active}"
+                              href="@page.href.getOrElse("#")"
                               >
-                              @item.name
+                              @page.name
                           </a>
                             }
                       </li>
+                      }
+                      }
                       }
                     </ul>
                 </li>

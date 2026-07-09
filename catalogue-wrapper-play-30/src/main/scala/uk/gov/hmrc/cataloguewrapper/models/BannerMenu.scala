@@ -30,13 +30,30 @@ sealed trait MenuLink {
 object MenuLink:
   given JsonConfiguration        = JsonConfiguration(
     typeNaming = JsonNaming(_.split("\\.").last)
-    )
+  )
   given format: Format[MenuLink] = Json.format[MenuLink]
 
+// Dropdown-only navigation items. `Page` can be reused here, plus an explicit separator item.
+sealed trait DropdownItem:
+  def isSeparator: Boolean = false
+  def asPage: Option[Page] = None
+
+object DropdownItem:
+  given JsonConfiguration            = JsonConfiguration(
+    typeNaming = JsonNaming(_.split("\\.").last)
+  )
+  given format: Format[DropdownItem] = Json.format[DropdownItem]
+
+final case class DropdownSeparator() extends DropdownItem:
+  override def isSeparator: Boolean = true
+
+object DropdownSeparator:
+  given format: Format[DropdownSeparator] = Json.format[DropdownSeparator]
+
 final case class BannerMenu(
-  brand          :MenuLink,
-  topLevelLinks  :Seq[MenuLink],
-  dropdowns      :Seq[MenuDropdown]
+    brand: MenuLink,
+    topLevelLinks: Seq[MenuLink],
+    dropdowns: Seq[MenuDropdown]
 )
 
 object BannerMenu:
@@ -48,14 +65,14 @@ object BannerMenu:
       brand = TopMenu("brand", "MDTP", Some("/")),
       topLevelLinks = Seq.empty,
       dropdowns = Seq.empty
-      )
+    )
 
 final case class MenuDropdown(
-  id           :String,
-  name         :String,
-  href         :Option[String],
-  items        :Seq[MenuLink],
-  dropDownRole : Seq[Role] = Nil
+    id: String,
+    name: String,
+    href: Option[String],
+    items: Seq[DropdownItem],
+    dropDownRole: Seq[Role] = Nil
 )
 
 object MenuDropdown {
@@ -64,14 +81,14 @@ object MenuDropdown {
 }
 
 final case class TopMenu(
-  name        :String,
-  id          :String,
-  href        :Option[String],
-  external    :Boolean = false
+    name: String,
+    id: String,
+    href: Option[String],
+    external: Boolean = false
 ) extends MenuLink
 
 object TopMenu:
-  given format: Format[TopMenu]                                                   = Json.format[TopMenu]
+  given format: Format[TopMenu]                              = Json.format[TopMenu]
   def apply(name: String, id: String, href: String): TopMenu =
     TopMenu(name, id, Some(href))
 
@@ -79,11 +96,13 @@ object TopMenu:
     TopMenu(name, id, None)
 
 final case class Page(
-  name        :String,
-  id          :String,
-  href        :Option[String],
-  external    :Boolean = false
+    name: String,
+    id: String,
+    href: Option[String],
+    external: Boolean = false
 ) extends MenuLink
+    with DropdownItem:
+  override def asPage: Option[Page] = Some(this)
 
 object Page:
   given format: Format[Page] = Json.format[Page]

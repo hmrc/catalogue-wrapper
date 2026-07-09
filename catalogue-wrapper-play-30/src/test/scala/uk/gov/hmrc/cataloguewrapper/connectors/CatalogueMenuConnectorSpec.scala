@@ -25,7 +25,15 @@ import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
-import uk.gov.hmrc.cataloguewrapper.models.{BannerMenu, MenuDropdown, NavigationData, Page, SearchTerm, TopMenu}
+import uk.gov.hmrc.cataloguewrapper.models.{
+  BannerMenu,
+  DropdownSeparator,
+  MenuDropdown,
+  NavigationData,
+  Page,
+  SearchTerm,
+  TopMenu
+}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.test.WireMockSupport
@@ -80,7 +88,7 @@ class CatalogueMenuConnectorSpec
           Page("Create a User", "create-user", "/create-user"),
           Page("Create a Service User", "create-service-user", "/create-service-user"),
           Page("Offboard Users", "offboard-users", "/offboard-users")
-          )
+        )
       ),
       MenuDropdown(
         "deployments",
@@ -91,7 +99,7 @@ class CatalogueMenuConnectorSpec
           Page("Deployment Events", "deployment-events", "/deployments/production"),
           Page("Version Timeline", "deployment-timeline", "/deployment-timeline"),
           Page("What's Running Where", "whats-running-where", "/whats-running-where")
-          )
+        )
       ),
       MenuDropdown(
         "shuttering",
@@ -102,7 +110,7 @@ class CatalogueMenuConnectorSpec
           Page("Shutter Overview - Api", "shutter-overview-api", "/shuttering-overview/api"),
           Page("Shutter Overview - Rate", "shutter-overview-rate", "/shuttering-overview/rate"),
           Page("Shutter Events", "shutter-events", "/shutter-events")
-          )
+        )
       ),
       MenuDropdown(
         "health",
@@ -113,14 +121,23 @@ class CatalogueMenuConnectorSpec
           Page("Bobby Rules", "bobby-rules", "/bobbyrules"),
           Page("Bobby Violations", "bobby-violations", "/bobby-violations"),
           Page("Leak Detection - Rules", "leak-detection-rules", "/leak-detection"),
-          Page("Leak Detection - Repositories", "leak-detection-repositories", "/leak-detection/repositories?includeViolations=true"),
+          Page(
+            "Leak Detection - Repositories",
+            "leak-detection-repositories",
+            "/leak-detection/repositories?includeViolations=true"
+          ),
           Page("Vulnerabilities", "vulnerabilities", "/vulnerabilities?curationStatus=ACTION_REQUIRED"),
           Page("Vulnerabilities - Services", "vulnerabilities-services", "/vulnerabilities/services"),
-          Page("Vulnerabilities - Timeline", "vulnerabilities-timeline", "/vulnerabilities/timeline?curationStatus=ACTION_REQUIRED"),
+          Page(
+            "Vulnerabilities - Timeline",
+            "vulnerabilities-timeline",
+            "/vulnerabilities/timeline?curationStatus=ACTION_REQUIRED"
+          ),
+          DropdownSeparator(),
           Page("PR-Commenter Recommendations", "pr-commenter-recommendations", "/pr-commenter/recommendations"),
           Page("Health Metrics - Timeline", "health-metrics-timeline", "/health-metrics/timeline"),
           Page("Operational Metrics", "operational-metrics", "/health-metrics")
-          )
+        )
       ),
       MenuDropdown(
         "explore",
@@ -138,7 +155,7 @@ class CatalogueMenuConnectorSpec
           Page("Config Warnings", "config-warnings", "/config/warnings/search"),
           Page("Cost Explorer", "cost-explorer", "/cost-explorer"),
           Page("Service Provision", "service-provision", "/service-provision")
-          )
+        )
       ),
       MenuDropdown(
         "docs",

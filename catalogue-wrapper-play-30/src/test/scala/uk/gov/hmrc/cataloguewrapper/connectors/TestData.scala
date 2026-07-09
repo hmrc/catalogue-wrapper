@@ -240,6 +240,9 @@ trait TestData {
       |          "external": false,
       |          "_type": "Page"
       |        },
+       |        {
+       |          "_type": "DropdownSeparator"
+       |        },
       |        {
       |          "name": "PR-Commenter Recommendations",
       |          "id": "pr-commenter-recommendations",
