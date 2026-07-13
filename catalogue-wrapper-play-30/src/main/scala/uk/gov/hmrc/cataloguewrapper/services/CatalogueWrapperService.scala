@@ -20,9 +20,9 @@ import play.api.i18n.Messages
 import play.api.mvc.RequestHeader
 import play.twirl.api.HtmlFormat
 import uk.gov.hmrc.cataloguewrapper.config.CatalogueWrapperConfig
-import uk.gov.hmrc.cataloguewrapper.models.BannerMenu
+import uk.gov.hmrc.cataloguewrapper.models.{BannerMenu, ViewModel}
 import uk.gov.hmrc.cataloguewrapper.views.html.StandardCatalogueLayout
-import uk.gov.hmrc.cataloguewrapper.views.html.{CatalogueMenuBar => CatalogueMenuBarView}
+import uk.gov.hmrc.cataloguewrapper.views.html.CatalogueMenuBar as CatalogueMenuBarView
 import uk.gov.hmrc.http.HeaderCarrier
 
 import javax.inject.{Inject, Singleton}
@@ -109,7 +109,7 @@ class CatalogueWrapperService @Inject() (
   ): Future[HtmlFormat.Appendable] =
     navigationCache.refreshOrCached().map { nav =>
       CatalogueMenuBarView(
-        menu = nav.menu,
+        menu = buildViewModel(nav.menu, activeItemId),
         activeItemId = activeItemId,
         quickSearchUrl = config.quickSearchPath,
         minSearchLen = config.quickSearchMinTermLength,
@@ -117,6 +117,9 @@ class CatalogueWrapperService @Inject() (
         signOutUrl = signOutUrl
       )
     }
+
+  private def buildViewModel(menu: BannerMenu, activeItemId: Option[String]): ViewModel =
+    ViewModel.from(menu, activeItemId)
 
   /** Render only the navbar/search bar with an already-fetched menu. */
   def catalogueMenuBarWithMenu(
@@ -129,7 +132,7 @@ class CatalogueWrapperService @Inject() (
       messages: Messages
   ): HtmlFormat.Appendable =
     CatalogueMenuBarView(
-      menu = menu,
+      menu = buildViewModel(menu, activeItemId),
       activeItemId = activeItemId,
       quickSearchUrl = config.quickSearchPath,
       minSearchLen = config.quickSearchMinTermLength,

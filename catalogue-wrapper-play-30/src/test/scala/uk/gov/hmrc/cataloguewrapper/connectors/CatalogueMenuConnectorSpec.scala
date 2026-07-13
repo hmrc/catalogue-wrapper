@@ -133,7 +133,7 @@ class CatalogueMenuConnectorSpec
             "vulnerabilities-timeline",
             "/vulnerabilities/timeline?curationStatus=ACTION_REQUIRED"
           ),
-          DropdownSeparator(),
+          DropdownSeparator,
           Page("PR-Commenter Recommendations", "pr-commenter-recommendations", "/pr-commenter/recommendations"),
           Page("Health Metrics - Timeline", "health-metrics-timeline", "/health-metrics/timeline"),
           Page("Operational Metrics", "operational-metrics", "/health-metrics")

@@ -30,7 +30,7 @@ sealed trait MenuLink {
 object MenuLink:
   given JsonConfiguration        = JsonConfiguration(
     typeNaming = JsonNaming(_.split("\\.").last)
-    )
+  )
   given format: Format[MenuLink] = Json.format[MenuLink]
 
 sealed trait DropdownItem:
@@ -40,17 +40,17 @@ sealed trait DropdownItem:
 object DropdownItem:
   given JsonConfiguration            = JsonConfiguration(
     typeNaming = JsonNaming(_.split("\\.").last)
-    )
+  )
   given format: Format[DropdownItem] = Json.format[DropdownItem]
 
 case object DropdownSeparator extends DropdownItem:
   given format: Format[DropdownSeparator.type] = Json.format[DropdownSeparator.type]
-  override def isSeparator: Boolean = true
+  override def isSeparator: Boolean            = true
 
 final case class BannerMenu(
-  brand: MenuLink,
-  topLevelLinks: Seq[MenuLink],
-  dropdowns: Seq[MenuDropdown]
+    brand          : MenuLink,
+    topLevelLinks  : Seq[MenuLink],
+    dropdowns      : Seq[MenuDropdown]
 )
 
 object BannerMenu:
@@ -59,16 +59,16 @@ object BannerMenu:
 
   val empty: BannerMenu =
     BannerMenu(
-      brand = TopMenu("brand", "MDTP", Some("/")),
+      brand         = TopMenu("brand", "MDTP", Some("/")),
       topLevelLinks = Seq.empty,
-      dropdowns = Seq.empty
-      )
+      dropdowns     = Seq.empty
+    )
 
 final case class MenuDropdown(
-  id           :String,
-  name         :String,
-  href         :Option[String],
-  items        :Seq[DropdownItem],
+  id           : String,
+  name         : String,
+  href         : Option[String],
+  items        : Seq[DropdownItem],
   dropDownRole : Seq[Role] = Nil
 )
 
@@ -78,14 +78,15 @@ object MenuDropdown {
 }
 
 final case class TopMenu(
-  name        :String,
-  id          :String,
-  href        :Option[String],
-  external    :Boolean = false
+  name        : String,
+  id          : String,
+  href        : Option[String],
+  external    : Boolean = false
 ) extends MenuLink
 
 object TopMenu:
   given format: Format[TopMenu] = Json.format[TopMenu]
+
   def apply(name: String, id: String, href: String): TopMenu =
     TopMenu(name, id, Some(href))
 
@@ -93,12 +94,12 @@ object TopMenu:
     TopMenu(name, id, None)
 
 final case class Page(
-  name        :String,
-  id          :String,
-  href        :Option[String],
-  external    :Boolean = false
+  name        : String,
+  id          : String,
+  href        : Option[String],
+  external    : Boolean = false
 ) extends MenuLink
-  with DropdownItem:
+    with DropdownItem:
   override def asPage: Option[Page] = Some(this)
 
 object Page:
@@ -108,30 +109,46 @@ object Page:
     Page(name, id, Some(href))
 
 final case class SearchTerm(
-    linkType: String,
-    name: String,
-    href: String,
-    weight: Float = 0.5f,
-    hints: Set[String] = Set.empty,
-    openInNewWindow: Boolean = false
+    linkType        : String,
+    name            : String,
+    href            : String,
+    weight          : Float = 0.5f,
+    hints           : Set[String] = Set.empty,
+    openInNewWindow : Boolean = false
 ):
   lazy val terms: Set[String] =
     Set(name, linkType).union(hints).map(SearchTerm.normalise)
 
 object SearchTerm:
-  given Format[SearchTerm] = Json.using[Json.WithDefaultValues].format[SearchTerm]
+  given Format[SearchTerm] = Json.using[Json.WithDefaultValues]
+                                 .format[SearchTerm]
 
   def normalise(value: String): String =
     value.toLowerCase.replaceAll("[ \\-_]", "")
 
+final case class NavigationView(
+    menu        : ViewModel,
+    searchIndex : Seq[SearchTerm]
+)
+
+object NavigationView:
+  given Format[NavigationView] = Json.using[Json.WithDefaultValues]
+                                     .format[NavigationView]
+
+  val empty: NavigationView =
+    NavigationView(
+      menu        = ViewModel.empty,
+      searchIndex = Seq.empty
+    )
+
 final case class NavigationData(
-    menu: BannerMenu,
-    searchIndex: Seq[SearchTerm]
+    menu        : BannerMenu,
+    searchIndex : Seq[SearchTerm]
 )
 
 object NavigationData:
-  given Format[NavigationData] =
-    Json.using[Json.WithDefaultValues].format[NavigationData]
+  given Format[NavigationData] = Json.using[Json.WithDefaultValues]
+                                     .format[NavigationData]
 
   val empty: NavigationData =
     NavigationData(

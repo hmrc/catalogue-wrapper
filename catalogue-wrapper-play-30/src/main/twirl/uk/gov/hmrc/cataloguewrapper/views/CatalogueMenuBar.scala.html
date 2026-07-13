@@ -14,10 +14,10 @@
  * limitations under the License.
  *@
 
-@import uk.gov.hmrc.cataloguewrapper.models.{BannerMenu, Page}
+@import uk.gov.hmrc.cataloguewrapper.models.ViewModel
 
 @(
-menu: BannerMenu,
+menu: ViewModel,
 activeItemId: Option[String] = None,
 quickSearchUrl: String,
 minSearchLen: Int,
@@ -46,74 +46,58 @@ signOutUrl: Option[String] = None
     <div class="collapse navbar-collapse" id="main-menu">
       <ul id="main-menu-bar" class="navbar-nav me-auto mb-2 mb-md-0">
 
-        @for(link <- menu.topLevelLinks) {
-        <li class="nav-item">
-          @if(link.external) {
-          <a
-              class="nav-link @if(activeItemId.contains(link.id)) {active}"
-              href="@link.href.getOrElse("#")"
-              target="_blank"
-              rel="noreferrer noopener"
-              >
-              @link.name
-          </a>
-            } else {
-            <a
-                class="nav-link @if(activeItemId.contains(link.id)) {active}"
-                href="@link.href.getOrElse("#")"
-                >
-                @link.name
-            </a>
-              }
-        </li>
-        }
+        @for(topLevelLink <- menu.topLevelLinks) {
+          @if(topLevelLink.dropdown.isDefined) {
+            <li class="nav-item dropdown">
+              <a
+                  id="@{topLevelLink.id}-dropdown"
+                  class="nav-link dropdown-toggle @if(topLevelLink.isDropdownActive) {active}"
+                  href="@topLevelLink.href.getOrElse("#")"
+                  role="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                  >
+                  @topLevelLink.name
+              </a>
 
-        @for(dropdown <- menu.dropdowns) {
-                @defining(dropdown.items.collect { case page: Page => page.id }.exists(activeItemId.contains)) { dropdownActive =>
-                <li class="nav-item dropdown">
-                  <a
-                      id="@{dropdown.id}-dropdown"
-                      class="nav-link dropdown-toggle @if(dropdownActive) {active}"
-                      href="#"
-                      role="button"
-                      data-bs-toggle="dropdown"
-                      aria-expanded="false"
-                      >
-                      @dropdown.name
-                  </a>
-
-                    <ul class="dropdown-menu" aria-labelledby="@{dropdown.id}-dropdown">
-                      @for(item <- dropdown.items) {
-                      @if(item.isSeparator) {
-                      <li><hr class="dropdown-divider"></li>
+                <ul class="dropdown-menu" aria-labelledby="@{topLevelLink.id}-dropdown">
+                  @for(item <- topLevelLink.dropdown.toSeq.flatMap(_.items)) {
+                  @if(item.isSeparator) {
+                  <li><hr class="dropdown-divider"></li>
+                  } else {
+                  @for(page <- item.asPage) {
+                  <li>
+                    @if(page.external) {
+                    <a
+                        class="dropdown-item @if(activeItemId.contains(page.id)) {active}"
+                        href="@page.href.getOrElse("#")"
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        >
+                        @page.name
+                    </a>
                       } else {
-                      @defining(item.asPage.get) { page =>
-                      <li>
-                        @if(page.external) {
-                        <a
-                            class="dropdown-item @if(activeItemId.contains(page.id)) {active}"
-                            href="@page.href.getOrElse("#")"
-                            target="_blank"
-                            rel="noreferrer noopener"
-                            >
-                            @page.name
-                        </a>
-                          } else {
-                          <a
-                              class="dropdown-item @if(activeItemId.contains(page.id)) {active}"
-                              href="@page.href.getOrElse("#")"
-                              >
-                              @page.name
-                          </a>
-                            }
-                      </li>
-                      }
-                      }
-                      }
-                    </ul>
-                </li>
-                }
-              }
+                      <a
+                          class="dropdown-item @if(activeItemId.contains(page.id)) {active}"
+                          href="@page.href.getOrElse("#")"
+                          >
+                          @page.name
+                      </a>
+                        }
+                  </li>
+                  }
+                  }
+                  }
+                </ul>
+            </li>
+          } else {
+            <li class="nav-item">
+              <a class="nav-link @if(topLevelLink.isActive) {active}" href="@topLevelLink.href.getOrElse("#")">
+                @topLevelLink.name
+              </a>
+            </li>
+          }
+        }
       </ul>
 
       @* Search bar *@

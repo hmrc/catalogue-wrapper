@@ -32,7 +32,7 @@ class BannerMenuSpec extends AnyWordSpec with Matchers:
             "explore",
             "Explore",
             None,
-            Seq(Page("Teams", "teams", "/teams"), DropdownSeparator(), Page("Docs", "docs", "/docs"))
+            Seq(Page("Teams", "teams", "/teams"), DropdownSeparator, Page("Docs", "docs", "/docs"))
           )
         )
       )
