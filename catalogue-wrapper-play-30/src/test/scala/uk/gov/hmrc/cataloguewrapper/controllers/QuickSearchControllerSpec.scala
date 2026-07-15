@@ -53,7 +53,7 @@ class QuickSearchControllerSpec extends AnyWordSpec with Matchers with MockitoSu
 
   private val sampleNav = NavigationData(
     menu = BannerMenu(
-      brand = TopMenu("brand", "MDTP", Some("/")),
+      brand = TopMenu(name = "MDTP", id = "brand", href = Some("/")),
       topLevelLinks = Seq.empty,
       dropdowns = Seq.empty
     ),

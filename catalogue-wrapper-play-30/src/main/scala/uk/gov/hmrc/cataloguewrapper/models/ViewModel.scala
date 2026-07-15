@@ -47,7 +47,7 @@ object ViewModel {
 
   val empty: ViewModel =
     ViewModel(
-      brand = TopMenu("brand", "MDTP", Some("/")),
+      brand = TopMenu(name = "MDTP", id = "brand", href = Some("/")),
       topLevelLinks = Seq.empty
     )
 }

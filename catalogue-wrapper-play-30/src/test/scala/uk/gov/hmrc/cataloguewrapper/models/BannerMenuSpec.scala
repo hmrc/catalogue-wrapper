@@ -25,7 +25,7 @@ class BannerMenuSpec extends AnyWordSpec with Matchers:
   "BannerMenu JSON" should {
     "round-trip through reads/writes" in {
       val menu   = BannerMenu(
-        brand = TopMenu("brand", "MDTP", Some("/")),
+        brand = TopMenu(name = "MDTP", id = "brand", href = Some("/")),
         topLevelLinks = Seq(TopMenu("repos", "Repositories", "/repositories")),
         dropdowns = Seq(
           MenuDropdown(
