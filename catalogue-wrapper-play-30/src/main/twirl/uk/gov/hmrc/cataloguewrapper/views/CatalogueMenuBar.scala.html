@@ -1,0 +1,134 @@
+@*
+ * Copyright 2026 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *@
+
+@import uk.gov.hmrc.cataloguewrapper.models.BannerMenu
+
+@(
+menu: BannerMenu,
+activeItemId: Option[String] = None,
+quickSearchUrl: String,
+minSearchLen: Int,
+showSignOut: Boolean = true,
+signOutUrl: Option[String] = None
+)(implicit request: RequestHeader, messages: Messages)
+
+<nav class="navbar navbar-expand-md navbar-dark bg-black">
+  <div class="container">
+    <a class="navbar-brand" href="@menu.brand.href">
+      @menu.brand.text
+    </a>
+
+    <button
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#main-menu"
+        aria-controls="main-menu"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
+        >
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="main-menu">
+      <ul id="main-menu-bar" class="navbar-nav me-auto mb-2 mb-md-0">
+
+        @for(link <- menu.topLevelLinks) {
+        <li class="nav-item">
+          @if(link.external) {
+          <a
+              class="nav-link @if(activeItemId.contains(link.id)) {active}"
+              href="@link.href"
+              target="_blank"
+              rel="noreferrer noopener"
+              >
+              @link.text
+          </a>
+            } else {
+            <a
+                class="nav-link @if(activeItemId.contains(link.id)) {active}"
+                href="@link.href"
+                >
+                @link.text
+            </a>
+              }
+        </li>
+        }
+
+        @for(dropdown <- menu.dropdowns) {
+                @defining(dropdown.items.exists(item => activeItemId.contains(item.id))) { dropdownActive =>
+                <li class="nav-item dropdown">
+                  <a
+                      id="@{dropdown.id}-dropdown"
+                      class="nav-link dropdown-toggle @if(dropdownActive) {active}"
+                      href="#"
+                      role="button"
+                      data-bs-toggle="dropdown"
+                      aria-expanded="false"
+                      >
+                      @dropdown.text
+                  </a>
+
+                    <ul class="dropdown-menu" aria-labelledby="@{dropdown.id}-dropdown">
+                      @for(item <- dropdown.items) {
+                      <li>
+                        @if(item.external) {
+                        <a
+                            class="dropdown-item @if(activeItemId.contains(item.id)) {active}"
+                            href="@item.href"
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            >
+                            @item.text
+                        </a>
+                          } else {
+                          <a
+                              class="dropdown-item @if(activeItemId.contains(item.id)) {active}"
+                              href="@item.href"
+                              >
+                              @item.text
+                          </a>
+                            }
+                      </li>
+                      }
+                    </ul>
+                </li>
+                }
+              }
+      </ul>
+
+      @* Search bar *@
+      @uk.gov.hmrc.cataloguewrapper.views.html.CatalogueSearchBar(quickSearchUrl, minSearchLen)
+
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <a id="searchicon" class="nav-link" href="#" title="Search">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.099zm-5.242 1.156a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11"/>
+            </svg>
+          </a>
+        </li>
+        @if(showSignOut) {
+        <li class="nav-item">
+          <a class="nav-link" href="@signOutUrl.getOrElse("#")">
+            Sign out
+          </a>
+        </li>
+        }
+      </ul>
+    </div>
+  </div>
+</nav>

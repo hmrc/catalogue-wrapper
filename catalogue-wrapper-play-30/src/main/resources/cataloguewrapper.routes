@@ -1,0 +1,2 @@
+GET /quicksearch  uk.gov.hmrc.cataloguewrapper.controllers.QuickSearchController.search(query: String, limit: Option[Int])
+GET /assets/*file uk.gov.hmrc.cataloguewrapper.controllers.Assets.at(path="/assets", file)
