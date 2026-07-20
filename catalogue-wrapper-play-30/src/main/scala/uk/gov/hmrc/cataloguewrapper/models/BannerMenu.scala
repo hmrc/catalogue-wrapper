@@ -15,27 +15,37 @@
  */
 
 package uk.gov.hmrc.cataloguewrapper.models
+import play.api.libs.json.{Format, Json, JsonConfiguration, JsonNaming}
 
-import play.api.libs.json.{Json, OFormat}
+sealed trait MenuLink {
+  def name: String
 
-final case class MenuLink(
-    id: String,
-    text: String,
-    href: String,
-    external: Boolean = false
-)
+  def id: String
+
+  def href: Option[String]
+
+  def external: Boolean
+}
 
 object MenuLink:
-  given OFormat[MenuLink] = Json.using[Json.WithDefaultValues].format[MenuLink]
+  given JsonConfiguration        = JsonConfiguration(
+    typeNaming = JsonNaming(_.split("\\.").last)
+  )
+  given format: Format[MenuLink] = Json.format[MenuLink]
 
-final case class MenuDropdown(
-    id: String,
-    text: String,
-    items: Seq[MenuLink]
-)
+sealed trait DropdownItem:
+  def isSeparator: Boolean = false
+  def asPage: Option[Page] = None
 
-object MenuDropdown:
-  given OFormat[MenuDropdown] = Json.format[MenuDropdown]
+object DropdownItem:
+  given JsonConfiguration            = JsonConfiguration(
+    typeNaming = JsonNaming(_.split("\\.").last)
+  )
+  given format: Format[DropdownItem] = Json.format[DropdownItem]
+
+case object DropdownSeparator extends DropdownItem:
+  given format: Format[DropdownSeparator.type] = Json.format[DropdownSeparator.type]
+  override def isSeparator: Boolean            = true
 
 final case class BannerMenu(
     brand: MenuLink,
@@ -44,14 +54,59 @@ final case class BannerMenu(
 )
 
 object BannerMenu:
-  given OFormat[BannerMenu] = Json.format[BannerMenu]
+  given format: Format[BannerMenu] =
+    Json.format[BannerMenu]
 
   val empty: BannerMenu =
     BannerMenu(
-      brand = MenuLink("brand", "MDTP", "/"),
+      brand = TopMenu(name = "MDTP", id = "brand", href = Some("/")),
       topLevelLinks = Seq.empty,
       dropdowns = Seq.empty
     )
+
+final case class MenuDropdown(
+    id: String,
+    name: String,
+    href: Option[String],
+    items: Seq[DropdownItem],
+    dropDownRole: Seq[Role] = Nil
+)
+
+object MenuDropdown {
+  given format: Format[MenuDropdown] =
+    Json.format[MenuDropdown]
+}
+
+final case class TopMenu(
+    name: String,
+    id: String,
+    href: Option[String],
+    external: Boolean = false
+) extends MenuLink
+
+object TopMenu:
+  given format: Format[TopMenu] = Json.format[TopMenu]
+
+  def apply(name: String, id: String, href: String): TopMenu =
+    TopMenu(name, id, Some(href))
+
+  def apply(name: String, id: String): TopMenu =
+    TopMenu(name, id, None)
+
+final case class Page(
+    name: String,
+    id: String,
+    href: Option[String],
+    external: Boolean = false
+) extends MenuLink
+    with DropdownItem:
+  override def asPage: Option[Page] = Some(this)
+
+object Page:
+  given format: Format[Page] = Json.format[Page]
+
+  def apply(name: String, id: String, href: String): Page =
+    Page(name, id, Some(href))
 
 final case class SearchTerm(
     linkType: String,
@@ -65,10 +120,28 @@ final case class SearchTerm(
     Set(name, linkType).union(hints).map(SearchTerm.normalise)
 
 object SearchTerm:
-  given OFormat[SearchTerm] = Json.using[Json.WithDefaultValues].format[SearchTerm]
+  given Format[SearchTerm] = Json
+    .using[Json.WithDefaultValues]
+    .format[SearchTerm]
 
   def normalise(value: String): String =
     value.toLowerCase.replaceAll("[ \\-_]", "")
+
+final case class NavigationView(
+    menu: ViewModel,
+    searchIndex: Seq[SearchTerm]
+)
+
+object NavigationView:
+  given Format[NavigationView] = Json
+    .using[Json.WithDefaultValues]
+    .format[NavigationView]
+
+  val empty: NavigationView =
+    NavigationView(
+      menu = ViewModel.empty,
+      searchIndex = Seq.empty
+    )
 
 final case class NavigationData(
     menu: BannerMenu,
@@ -76,8 +149,9 @@ final case class NavigationData(
 )
 
 object NavigationData:
-  given OFormat[NavigationData] =
-    Json.using[Json.WithDefaultValues].format[NavigationData]
+  given Format[NavigationData] = Json
+    .using[Json.WithDefaultValues]
+    .format[NavigationData]
 
   val empty: NavigationData =
     NavigationData(

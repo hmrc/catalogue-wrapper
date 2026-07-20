@@ -24,7 +24,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.cataloguewrapper.config.CatalogueWrapperConfig
 import uk.gov.hmrc.cataloguewrapper.connectors.CatalogueMenuConnector
-import uk.gov.hmrc.cataloguewrapper.models.{BannerMenu, MenuLink, NavigationData, SearchTerm}
+import uk.gov.hmrc.cataloguewrapper.models.{BannerMenu, MenuLink, NavigationData, SearchTerm, TopMenu}
 import uk.gov.hmrc.cataloguewrapper.search.SearchIndex
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -40,7 +40,7 @@ class CatalogueNavigationCacheSpec extends AnyWordSpec with Matchers with Mockit
   when(mockConfig.quickSearchRefreshThrottleSeconds).thenReturn(30L)
 
   private val sampleMenu = BannerMenu(
-    brand = MenuLink("brand", "MDTP", "/"),
+    brand = TopMenu(name = "MDTP", id = "brand", href = Some("/")),
     topLevelLinks = Seq.empty,
     dropdowns = Seq.empty
   )

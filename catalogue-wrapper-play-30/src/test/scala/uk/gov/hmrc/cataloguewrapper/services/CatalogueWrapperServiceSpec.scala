@@ -28,7 +28,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers.stubMessages
 import play.twirl.api.Html
 import uk.gov.hmrc.cataloguewrapper.config.CatalogueWrapperConfig
-import uk.gov.hmrc.cataloguewrapper.models.{BannerMenu, MenuLink, NavigationData}
+import uk.gov.hmrc.cataloguewrapper.models.{BannerMenu, MenuDropdown, NavigationData, Page, TopMenu}
 import uk.gov.hmrc.cataloguewrapper.views.html.{CatalogueScripts, CatalogueStylesheets, StandardCatalogueLayout}
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -48,7 +48,7 @@ class CatalogueWrapperServiceSpec extends AnyWordSpec with Matchers with Mockito
   private val service = new CatalogueWrapperService(mockNavCache, mockConfig, layout)
 
   private val sampleMenu = BannerMenu(
-    brand = MenuLink("brand", "MDTP", "/"),
+    brand = TopMenu(name = "MDTP", id = "brand", href = Some("/")),
     topLevelLinks = Seq.empty,
     dropdowns = Seq.empty
   )
@@ -135,6 +135,56 @@ class CatalogueWrapperServiceSpec extends AnyWordSpec with Matchers with Mockito
       val result = service.catalogueMenuBarWithMenu(sampleMenu, activeItemId = Some("repos"))
       result.body should include("MDTP")
       result.body should not include "<html"
+    }
+
+    "use # when a menu link href is missing" in {
+      when(mockConfig.quickSearchPath)
+        .thenReturn("/catalogue-wrapper/quicksearch")
+      when(mockConfig.quickSearchMinTermLength)
+        .thenReturn(3)
+
+      val menuWithMissingHref = sampleMenu.copy(
+        topLevelLinks = Seq(TopMenu(name = "Repositories", id = "repos", href = None))
+      )
+
+      val result = service.catalogueMenuBarWithMenu(menuWithMissingHref, activeItemId = Some("repos"))
+      result.body should include("href=\"#\"")
+    }
+
+    "mark a direct top-level link as active" in {
+      when(mockConfig.quickSearchPath)
+        .thenReturn("/catalogue-wrapper/quicksearch")
+      when(mockConfig.quickSearchMinTermLength)
+        .thenReturn(3)
+
+      val menuWithDirectLink = sampleMenu.copy(
+        topLevelLinks = Seq(TopMenu(name = "Repositories", id = "repos", href = Some("/repos")))
+      )
+
+      val result = service.catalogueMenuBarWithMenu(menuWithDirectLink, activeItemId = Some("repos"))
+      result.body should include("class=\"nav-link active\"")
+    }
+
+    "mark a dropdown top-level link as active when one of its pages is active" in {
+      when(mockConfig.quickSearchPath)
+        .thenReturn("/catalogue-wrapper/quicksearch")
+      when(mockConfig.quickSearchMinTermLength)
+        .thenReturn(3)
+
+      val menuWithDropdown = sampleMenu.copy(
+        topLevelLinks = Seq(TopMenu(name = "Services", id = "services", href = Some("/services"))),
+        dropdowns = Seq(
+          MenuDropdown(
+            id = "services",
+            name = "Services",
+            href = Some("/services"),
+            items = Seq(Page(name = "Repositories", id = "repos", href = Some("/repos")))
+          )
+        )
+      )
+
+      val result = service.catalogueMenuBarWithMenu(menuWithDropdown, activeItemId = Some("repos"))
+      result.body should include("class=\"nav-link dropdown-toggle active\"")
     }
   }
 
