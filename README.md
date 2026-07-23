@@ -33,6 +33,51 @@ Both requests start in parallel and are treated as one refresh operation. If eit
 
 This is expected to be acceptable because both endpoints are served by the same `catalogue-config` service, so one endpoint failing while the other succeeds should be unlikely. If that assumption proves wrong, the wrapper could be changed to support partial refreshes — for example using a fresh menu alongside the previously cached search index, or vice versa.
 
+## Internal Auth
+
+The `catalogue-config` menu endpoint is protected by Internal Auth. The wrapper
+does not authenticate users itself; it forwards the signed-in user's
+`Authorization` credential from the consuming frontend's `HeaderCarrier`.
+
+Consuming frontends must:
+
+1. Use Internal Auth for the page request.
+2. Enable the Internal Auth client module:
+   ```hocon
+   play.modules.enabled += "uk.gov.hmrc.internalauth.client.modules.InternalAuthModule"
+   ```
+3. Configure the local Internal Auth service:
+   ```hocon
+   microservice.services.internal-auth {
+     protocol = http
+     host     = localhost
+     port     = 8470
+   }
+   ```
+4. Construct the `HeaderCarrier` from the authenticated request and session
+   before calling `CatalogueWrapperService`:
+   ```scala
+   given HeaderCarrier =
+     HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+   ```
+
+The menu always includes the direct `Users` link. Additional Users dropdown
+entries are controlled by permissions for resource type `catalogue-frontend`:
+
+| Resource type        | Resource location | Action        | Menu entries enabled                            |
+| -------------------- | ----------------- | ------------- | ----------------------------------------------- |
+| `catalogue-frontend` | `*`               | `CREATE_USER` | Create a User; Create a Service User             |
+| `catalogue-frontend` | `*`               | `MANAGE_USER` | Offboard Users                                   |
+
+These permissions are additional to any permissions required by the consuming
+frontend itself. For example, a frontend may require its own `READ` permission
+to display the page while also granting `catalogue-frontend` / `CREATE_USER` to
+display the create-user menu entries.
+
+If neither Catalogue action is present, the direct `Users` link is still
+rendered but no Users dropdown is returned. Missing or rejected Internal Auth
+credentials cause the menu request to return `401 Unauthorized`.
+
 ## Adding the dependency
 
 ```sbt

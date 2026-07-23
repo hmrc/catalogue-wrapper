@@ -15,6 +15,7 @@
  *@
 
 @import uk.gov.hmrc.cataloguewrapper.models.ViewModel
+@import uk.gov.hmrc.cataloguewrapper.models.MenuDropdown
 
 @(
 menu: ViewModel,
@@ -24,6 +25,36 @@ minSearchLen: Int,
 showSignOut: Boolean = true,
 signOutUrl: Option[String] = None
 )(implicit request: RequestHeader, messages: Messages)
+
+@renderDropdownItems(dropdown: MenuDropdown) = {
+  @for(item <- dropdown.items) {
+    @if(item.isSeparator) {
+      <li><hr class="dropdown-divider"></li>
+    } else {
+      @for(page <- item.asPage) {
+        <li>
+          @if(page.external) {
+            <a
+              class="dropdown-item @if(activeItemId.contains(page.id)) {active}"
+              href="@page.href.getOrElse("#")"
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              @page.name
+            </a>
+          } else {
+            <a
+              class="dropdown-item @if(activeItemId.contains(page.id)) {active}"
+              href="@page.href.getOrElse("#")"
+            >
+              @page.name
+            </a>
+          }
+        </li>
+      }
+    }
+  }
+}
 
 <nav class="navbar navbar-expand-md navbar-dark bg-black">
   <div class="container">
@@ -47,55 +78,58 @@ signOutUrl: Option[String] = None
       <ul id="main-menu-bar" class="navbar-nav me-auto mb-2 mb-md-0">
 
         @for(topLevelLink <- menu.topLevelLinks) {
-          @if(topLevelLink.dropdown.isDefined) {
-            <li class="nav-item dropdown">
-              <a
+          @(topLevelLink.href, topLevelLink.dropdown) match {
+            case (Some(href), Some(dropdown)) => {
+              <li class="nav-item dropdown catalogue-nav-split">
+                <a
+                  id="@{topLevelLink.id}-link"
+                  class="nav-link catalogue-nav-split-link @if(topLevelLink.isActive || topLevelLink.isDropdownActive) {active}"
+                  href="@href"
+                >
+                  @topLevelLink.name
+                </a>
+
+                <button
                   id="@{topLevelLink.id}-dropdown"
-                  class="nav-link dropdown-toggle @if(topLevelLink.isDropdownActive) {active}"
-                  href="@topLevelLink.href.getOrElse("#")"
-                  role="button"
+                  class="nav-link dropdown-toggle catalogue-nav-split-toggle @if(topLevelLink.isDropdownActive) {active}"
+                  type="button"
                   data-bs-toggle="dropdown"
                   aria-expanded="false"
-                  >
-                  @topLevelLink.name
-              </a>
+                  aria-label="Open @topLevelLink.name menu"
+                >
+                  <span class="visually-hidden">Open @topLevelLink.name menu</span>
+                </button>
 
                 <ul class="dropdown-menu" aria-labelledby="@{topLevelLink.id}-dropdown">
-                  @for(item <- topLevelLink.dropdown.toSeq.flatMap(_.items)) {
-                  @if(item.isSeparator) {
-                  <li><hr class="dropdown-divider"></li>
-                  } else {
-                  @for(page <- item.asPage) {
-                  <li>
-                    @if(page.external) {
-                    <a
-                        class="dropdown-item @if(activeItemId.contains(page.id)) {active}"
-                        href="@page.href.getOrElse("#")"
-                        target="_blank"
-                        rel="noreferrer noopener"
-                        >
-                        @page.name
-                    </a>
-                      } else {
-                      <a
-                          class="dropdown-item @if(activeItemId.contains(page.id)) {active}"
-                          href="@page.href.getOrElse("#")"
-                          >
-                          @page.name
-                      </a>
-                        }
-                  </li>
-                  }
-                  }
-                  }
+                  @renderDropdownItems(dropdown)
                 </ul>
-            </li>
-          } else {
-            <li class="nav-item">
-              <a class="nav-link @if(topLevelLink.isActive) {active}" href="@topLevelLink.href.getOrElse("#")">
-                @topLevelLink.name
-              </a>
-            </li>
+              </li>
+            }
+            case (None, Some(dropdown)) => {
+              <li class="nav-item dropdown">
+                <button
+                  id="@{topLevelLink.id}-dropdown"
+                  class="nav-link dropdown-toggle @if(topLevelLink.isDropdownActive) {active}"
+                  type="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                >
+                  @topLevelLink.name
+                </button>
+
+                <ul class="dropdown-menu" aria-labelledby="@{topLevelLink.id}-dropdown">
+                  @renderDropdownItems(dropdown)
+                </ul>
+              </li>
+            }
+            case (Some(href), None) => {
+              <li class="nav-item">
+                <a id="@{topLevelLink.id}-link" class="nav-link @if(topLevelLink.isActive) {active}" href="@href">
+                  @topLevelLink.name
+                </a>
+              </li>
+            }
+            case (None, None) => {}
           }
         }
       </ul>

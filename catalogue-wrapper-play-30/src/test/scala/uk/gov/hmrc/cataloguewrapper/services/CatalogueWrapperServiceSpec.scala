@@ -184,7 +184,78 @@ class CatalogueWrapperServiceSpec extends AnyWordSpec with Matchers with Mockito
       )
 
       val result = service.catalogueMenuBarWithMenu(menuWithDropdown, activeItemId = Some("repos"))
-      result.body should include("class=\"nav-link dropdown-toggle active\"")
+      result.body should include("id=\"services-link\"")
+      result.body should include("id=\"services-dropdown\"")
+      result.body should include("catalogue-nav-split-toggle active")
+    }
+
+    "render split controls when a top-level item has both href and dropdown" in {
+      when(mockConfig.quickSearchPath)
+        .thenReturn("/catalogue-wrapper/quicksearch")
+      when(mockConfig.quickSearchMinTermLength)
+        .thenReturn(3)
+
+      val menuWithSplitUsers = sampleMenu.copy(
+        topLevelLinks = Seq(TopMenu(name = "Users", id = "users", href = Some("/users"))),
+        dropdowns = Seq(
+          MenuDropdown(
+            id = "users",
+            name = "Users",
+            href = Some("/users"),
+            items = Seq(Page(name = "Create a User", id = "create-user", href = Some("/create-user")))
+          )
+        )
+      )
+
+      val result = service.catalogueMenuBarWithMenu(menuWithSplitUsers, activeItemId = Some("create-user"))
+      result.body should include("id=\"users-link\"")
+      result.body should include("href=\"/users\"")
+      result.body should include("id=\"users-dropdown\"")
+      result.body should include("aria-label=\"Open Users menu\"")
+      result.body should include("aria-labelledby=\"users-dropdown\"")
+      result.body should include("class=\"nav-item dropdown catalogue-nav-split\"")
+      result.body should not include "id=\"users-dropdown\" class=\"nav-link dropdown-toggle\" href=\"/users\""
+    }
+
+    "render only the direct link when a top-level item has href and no dropdown" in {
+      when(mockConfig.quickSearchPath)
+        .thenReturn("/catalogue-wrapper/quicksearch")
+      when(mockConfig.quickSearchMinTermLength)
+        .thenReturn(3)
+
+      val menuWithUsersLinkOnly = sampleMenu.copy(
+        topLevelLinks = Seq(TopMenu(name = "Users", id = "users", href = Some("/users"))),
+        dropdowns = Seq.empty
+      )
+
+      val result = service.catalogueMenuBarWithMenu(menuWithUsersLinkOnly, activeItemId = Some("users"))
+      result.body should include("id=\"users-link\"")
+      result.body should include("href=\"/users\"")
+      result.body should not include "id=\"users-dropdown\""
+    }
+
+    "render a single text-and-arrow dropdown trigger when href is absent" in {
+      when(mockConfig.quickSearchPath)
+        .thenReturn("/catalogue-wrapper/quicksearch")
+      when(mockConfig.quickSearchMinTermLength)
+        .thenReturn(3)
+
+      val menuWithDropdownOnly = sampleMenu.copy(
+        topLevelLinks = Seq(TopMenu(name = "Deployments", id = "deployments", href = None)),
+        dropdowns = Seq(
+          MenuDropdown(
+            id = "deployments",
+            name = "Deployments",
+            href = None,
+            items = Seq(Page(name = "Deploy Service", id = "deploy-service", href = Some("/deploy-service")))
+          )
+        )
+      )
+
+      val result = service.catalogueMenuBarWithMenu(menuWithDropdownOnly, activeItemId = Some("deploy-service"))
+      result.body should include("id=\"deployments-dropdown\"")
+      result.body should include("data-bs-toggle=\"dropdown\"")
+      result.body should not include "id=\"deployments-link\""
     }
   }
 
