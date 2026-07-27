@@ -21,8 +21,8 @@ Consuming services do **not** need to copy `search.js`, navbar CSS, or menu mode
 The wrapper calls `catalogue-config` via HTTP for the full navigation payload — two separate calls made in parallel:
 
 ```text
-GET /menu-bar/menu         → BannerMenu
-GET /menu-bar/search-index → Seq[SearchTerm]
+GET /catalogue-config/menu         → BannerMenu
+GET /catalogue-config/search-index → Seq[SearchTerm]
 ```
 
 These are combined internally into `NavigationData(menu, searchIndex)`. The wrapper does not know about upstream Catalogue services, but it does build and query an in-memory optimised search index from the `SearchTerm` data supplied by `catalogue-config`.

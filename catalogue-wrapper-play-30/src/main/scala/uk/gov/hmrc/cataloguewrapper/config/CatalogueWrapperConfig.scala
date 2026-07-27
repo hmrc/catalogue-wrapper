@@ -27,7 +27,7 @@ class CatalogueWrapperConfig @Inject() (
     configuration: Configuration
 ):
   val menuBarBaseUrl: String =
-    servicesConfig.baseUrl("menu-bar")
+    servicesConfig.baseUrl("catalogue-config")
 
   val quickSearchLimit: Int =
     configuration.getOptional[Int]("catalogue-wrapper.quick-search.default-limit").getOrElse(20)
