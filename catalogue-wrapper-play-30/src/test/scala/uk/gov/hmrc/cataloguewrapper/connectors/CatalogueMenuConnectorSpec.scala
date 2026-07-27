@@ -184,9 +184,9 @@ class CatalogueMenuConnectorSpec
   val sampleSearchTerms: Seq[SearchTerm] = Seq(SearchTerm("service", "foo-service", "/services/foo-service"))
 
   "getNavigationData" should {
-    "call /menu-bar/menu and /menu-bar/search-index and combine into NavigationData" in {
+    "call /menu and /search-index and combine into NavigationData" in {
       stubFor(
-        get(urlEqualTo("/catalogue-config/menu-bar/menu"))
+        get(urlEqualTo("/catalogue-config/menu"))
           .willReturn(
             aResponse()
               .withStatus(200)
@@ -195,7 +195,7 @@ class CatalogueMenuConnectorSpec
           )
       )
       stubFor(
-        get(urlEqualTo("/catalogue-config/menu-bar/search-index"))
+        get(urlEqualTo("/catalogue-config/search-index"))
           .willReturn(
             aResponse()
               .withStatus(200)
@@ -209,7 +209,7 @@ class CatalogueMenuConnectorSpec
 
     "decode NavigationData with an empty search index" in {
       stubFor(
-        get(urlEqualTo("/catalogue-config/menu-bar/menu"))
+        get(urlEqualTo("/catalogue-config/menu"))
           .willReturn(
             aResponse()
               .withStatus(200)
@@ -218,7 +218,7 @@ class CatalogueMenuConnectorSpec
           )
       )
       stubFor(
-        get(urlEqualTo("/catalogue-config/menu-bar/search-index"))
+        get(urlEqualTo("/catalogue-config/search-index"))
           .willReturn(
             aResponse()
               .withStatus(200)

@@ -31,9 +31,9 @@ class CatalogueMenuConnector @Inject() (
     config: CatalogueWrapperConfig
 )(implicit ec: ExecutionContext):
 
-  val searchIndexEndpoint = "/catalogue-config/menu-bar/search-index"
+  val searchIndexEndpoint = "/catalogue-config/search-index"
 
-  val menuBarEndpoint = "/catalogue-config/menu-bar/menu"
+  val menuBarEndpoint = "/catalogue-config/menu"
 
   def getNavigationData()(implicit hc: HeaderCarrier): Future[NavigationData] =
     val menuF        = getMenu()
@@ -47,10 +47,10 @@ class CatalogueMenuConnector @Inject() (
 
   private def getMenu()(implicit hc: HeaderCarrier): Future[BannerMenu] =
     httpClient
-      .get(url"${config.menuBarBaseUrl}/catalogue-config/menu-bar/menu")
+      .get(url"${config.menuBarBaseUrl}/catalogue-config/menu")
       .execute[BannerMenu]
 
   private def getSearchIndex()(implicit hc: HeaderCarrier): Future[Seq[SearchTerm]] =
     httpClient
-      .get(url"${config.menuBarBaseUrl}/catalogue-config/menu-bar/search-index")
+      .get(url"${config.menuBarBaseUrl}/catalogue-config/search-index")
       .execute[Seq[SearchTerm]]
