@@ -50,9 +50,9 @@ class CatalogueMenuConnectorSpec
   lazy val app: Application =
     GuiceApplicationBuilder()
       .configure(
-        "microservice.services.menu-bar.host"     -> wireMockHost,
-        "microservice.services.menu-bar.port"     -> wireMockPort,
-        "microservice.services.menu-bar.protocol" -> "http"
+        "microservice.services.catalogue-config.host"     -> wireMockHost,
+        "microservice.services.catalogue-config.port"     -> wireMockPort,
+        "microservice.services.catalogue-config.protocol" -> "http"
       )
       .bindings(
         bind[HttpAuditing].toInstance(mock[HttpAuditing]),
