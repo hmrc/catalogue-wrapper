@@ -57,7 +57,7 @@ class QuickSearchController @Inject() (
           if navigationCache.shouldRefreshForSearch() then
             given HeaderCarrier =
               HeaderCarrierConverter.fromRequestAndSession(request, request.session)
-            navigationCache.refreshOrCached().map(_ => searchNow())
+            navigationCache.refreshSearch().map(_ => searchNow())
           else Future.successful(searchNow())
 
         resultsF.map(results => Ok(Json.toJson(results)))

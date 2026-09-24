@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.cataloguewrapper.config
 
+import java.time.Duration
 import play.api.Configuration
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
@@ -48,3 +49,6 @@ class CatalogueWrapperConfig @Inject() (
 
   val quickSearchPath: String =
     configuration.getOptional[String]("catalogue-wrapper.quick-search-path").getOrElse("/catalogue-wrapper/quicksearch")
+
+  val searchCacheTtl: Duration =
+    configuration.underlying.getDuration("catalogue-wrapper.quick-search.cache-ttl")

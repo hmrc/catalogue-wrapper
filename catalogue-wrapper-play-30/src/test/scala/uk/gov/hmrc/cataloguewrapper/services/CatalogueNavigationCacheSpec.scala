@@ -16,186 +16,130 @@
 
 package uk.gov.hmrc.cataloguewrapper.services
 
+import java.time.{Duration, Instant}
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{verify, when}
+import org.mockito.Mockito.{never, times, verify, when}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.cataloguewrapper.config.CatalogueWrapperConfig
 import uk.gov.hmrc.cataloguewrapper.connectors.CatalogueMenuConnector
-import uk.gov.hmrc.cataloguewrapper.models.{BannerMenu, MenuLink, NavigationData, SearchTerm, TopMenu}
+import uk.gov.hmrc.cataloguewrapper.models.{NavigationData, SearchTerm, TopMenu}
 import uk.gov.hmrc.cataloguewrapper.search.SearchIndex
 import uk.gov.hmrc.http.HeaderCarrier
-
-import java.time.Instant
+import scala.concurrent.{Future, Promise}
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
 class CatalogueNavigationCacheSpec extends AnyWordSpec with Matchers with MockitoSugar with ScalaFutures:
-
   given HeaderCarrier = HeaderCarrier()
 
-  private val mockConfig = mock[CatalogueWrapperConfig]
-  when(mockConfig.quickSearchRefreshThrottleSeconds).thenReturn(30L)
-
-  private val sampleMenu = BannerMenu(
-    brand = TopMenu(name = "MDTP", id = "brand", href = Some("/")),
-    topLevelLinks = Seq.empty,
-    dropdowns = Seq.empty
-  )
-
-  private val sampleSearchTerms = Seq(SearchTerm("service", "foo-service", "/services/foo-service"))
-  private val sampleNav         = NavigationData(menu = sampleMenu, searchIndex = sampleSearchTerms)
+  private val menu = NavigationData.empty.menu.copy(topLevelLinks = Seq(TopMenu("Teams", "teams", Some("/teams"))))
+  private val terms = Seq(SearchTerm("service", "foo-service", "/service/foo-service"))
 
   private def makeCache(
       connector: CatalogueMenuConnector,
-      searchIndex: SearchIndex = new SearchIndex,
-      config: CatalogueWrapperConfig = mockConfig
-  ): CatalogueNavigationCache =
-    new CatalogueNavigationCache(connector, searchIndex, config)
+      ttl: Duration = Duration.ofHours(1),
+      throttle: Long = 30L,
+      index: SearchIndex = new SearchIndex
+  ) =
+    val config = mock[CatalogueWrapperConfig]
+    when(config.searchCacheTtl).thenReturn(ttl)
+    when(config.quickSearchRefreshThrottleSeconds).thenReturn(throttle)
+    new CatalogueNavigationCache(connector, index, config)
 
-  "refreshOrCached" should {
-    "refresh and return the latest NavigationData from the connector" in {
+  "Navigation caching" should {
+    "return menus without waiting for search and share concurrent search refreshes" in {
       val connector = mock[CatalogueMenuConnector]
-      when(connector.getNavigationData()(any[HeaderCarrier]))
-        .thenReturn(Future.successful(sampleNav))
+      val pending = Promise[Seq[SearchTerm]]()
+      when(connector.getMenu()(any[HeaderCarrier])).thenReturn(Future.successful(menu))
+      when(connector.getSearchIndex()(any[HeaderCarrier])).thenReturn(pending.future)
+      val index = new SearchIndex
+      val cache = makeCache(connector, index = index)
 
+      cache.refreshOrCached().futureValue.menu shouldBe menu
+      cache.refreshOrCached().futureValue.menu shouldBe menu
+      val joined = cache.refreshSearch()
+      joined.isCompleted shouldBe false
+      pending.success(terms)
+      joined.futureValue shouldBe terms
+      cache.refreshOrCached().futureValue shouldBe NavigationData(menu, terms)
+      index.search(Seq("foo")) shouldBe terms
+      verify(connector, times(3)).getMenu()(any[HeaderCarrier])
+      verify(connector, times(1)).getSearchIndex()(any[HeaderCarrier])
+    }
+
+    "cache successful search responses, including empty results, for one hour" in {
+      Seq(terms, Seq.empty[SearchTerm]).foreach { result =>
+        val connector = mock[CatalogueMenuConnector]
+        when(connector.getSearchIndex()(any[HeaderCarrier])).thenReturn(Future.successful(result))
+        val cache = makeCache(connector)
+
+        cache.refreshSearch().futureValue shouldBe result
+        cache.refreshSearch().futureValue shouldBe result
+        cache.shouldRefreshForSearch(Instant.now().plusSeconds(3590)) shouldBe false
+        cache.shouldRefreshForSearch(Instant.now().plusSeconds(3601)) shouldBe true
+        verify(connector, times(1)).getSearchIndex()(any[HeaderCarrier])
+        verify(connector, never()).getMenu()(any[HeaderCarrier])
+      }
+    }
+
+    "retain the search index on failure, then replace it after recovery" in {
+      val connector = mock[CatalogueMenuConnector]
+      when(connector.getSearchIndex()(any[HeaderCarrier])).thenReturn(
+        Future.successful(terms), Future.failed(RuntimeException("offline")), Future.successful(Seq.empty))
+      val index = new SearchIndex
+      val cache = makeCache(connector, ttl = Duration.ZERO, throttle = 0L, index = index)
+
+      cache.refreshSearch().futureValue shouldBe terms
+      cache.refreshSearch().futureValue shouldBe terms
+      index.search(Seq("foo")) shouldBe terms
+      cache.refreshSearch().futureValue shouldBe empty
+      index.search(Seq("foo")) shouldBe empty
+      verify(connector, times(3)).getSearchIndex()(any[HeaderCarrier])
+    }
+
+    "throttle failed cold search refreshes for thirty seconds" in {
+      val connector = mock[CatalogueMenuConnector]
+      when(connector.getSearchIndex()(any[HeaderCarrier])).thenReturn(Future.failed(RuntimeException("offline")))
       val cache = makeCache(connector)
-      cache.refreshOrCached().futureValue shouldBe sampleNav
-    }
-
-    "update the SearchIndex when refresh succeeds" in {
-      val connector   = mock[CatalogueMenuConnector]
-      val searchIndex = mock[SearchIndex]
-      when(connector.getNavigationData()(any[HeaderCarrier]))
-        .thenReturn(Future.successful(sampleNav))
-
-      val cache = makeCache(connector, searchIndex)
-      cache.refreshOrCached().futureValue
-
-      verify(searchIndex).replaceAll(sampleSearchTerms)
-    }
-
-    "return cached data when backend fails after a prior success" in {
-      val connector = mock[CatalogueMenuConnector]
-      when(connector.getNavigationData()(any[HeaderCarrier]))
-        .thenReturn(Future.successful(sampleNav))
-        .thenReturn(Future.failed(RuntimeException("backend down")))
-
-      val cache = makeCache(connector)
-      cache.refreshOrCached().futureValue // prime the cache
-      cache.refreshOrCached().futureValue shouldBe sampleNav
-    }
-
-    "return empty navigation data when backend fails and the cache is empty" in {
-      val connector   = mock[CatalogueMenuConnector]
-      val searchIndex = mock[SearchIndex]
-      when(connector.getNavigationData()(any[HeaderCarrier]))
-        .thenReturn(Future.failed(RuntimeException("backend down")))
-
-      val cache = makeCache(connector, searchIndex)
-
-      cache.refreshOrCached().futureValue shouldBe NavigationData.empty
-      verify(searchIndex).replaceAll(Seq.empty)
-    }
-  }
-
-  "shouldRefreshForSearch" should {
-    "return true when cache is empty (cold pod)" in {
-      val connector = mock[CatalogueMenuConnector]
-      val cache     = makeCache(connector)
 
       cache.shouldRefreshForSearch() shouldBe true
-    }
-
-    "return false after real backend data with a non-empty search index is loaded" in {
-      val connector = mock[CatalogueMenuConnector]
-      when(connector.getNavigationData()(any[HeaderCarrier]))
-        .thenReturn(Future.successful(sampleNav))
-
-      val cache = makeCache(connector)
-      cache.refreshOrCached().futureValue
-
-      cache.shouldRefreshForSearch() shouldBe false
-    }
-
-    "throttle refresh after fallback empty data is cached" in {
-      val connector = mock[CatalogueMenuConnector]
-      when(connector.getNavigationData()(any[HeaderCarrier]))
-        .thenReturn(Future.failed(RuntimeException("backend down")))
-
-      val cache = makeCache(connector)
-      cache.refreshOrCached().futureValue shouldBe NavigationData.empty
-
+      cache.refreshSearch().futureValue shouldBe empty
+      cache.refreshSearch().futureValue shouldBe empty
       cache.shouldRefreshForSearch() shouldBe false
       cache.shouldRefreshForSearch(Instant.now().plusSeconds(31)) shouldBe true
+      verify(connector, times(1)).getSearchIndex()(any[HeaderCarrier])
     }
 
-    "throttle refresh after backend returns a real but empty search index" in {
-      val connector      = mock[CatalogueMenuConnector]
-      val emptySearchNav = sampleNav.copy(searchIndex = Seq.empty)
-      when(connector.getNavigationData()(any[HeaderCarrier]))
-        .thenReturn(Future.successful(emptySearchNav))
-
-      val cache = makeCache(connector)
-      cache.refreshOrCached().futureValue shouldBe emptySearchNav
-
-      cache.shouldRefreshForSearch() shouldBe false
-      cache.shouldRefreshForSearch(Instant.now().plusSeconds(31)) shouldBe true
-    }
-
-    "throttle again after a refresh attempt fails for fallback empty data" in {
+    "retain the existing menu fallback without discarding search data" in {
       val connector = mock[CatalogueMenuConnector]
-      when(connector.getNavigationData()(any[HeaderCarrier]))
-        .thenReturn(Future.failed(RuntimeException("backend down")))
-
+      when(connector.getMenu()(any[HeaderCarrier])).thenReturn(
+        Future.successful(menu), Future.failed(RuntimeException("offline")))
+      when(connector.getSearchIndex()(any[HeaderCarrier])).thenReturn(Future.successful(terms))
       val cache = makeCache(connector)
-      cache.refreshOrCached().futureValue shouldBe NavigationData.empty
 
-      // throttle has elapsed — a refresh attempt is allowed
-      cache.shouldRefreshForSearch(Instant.now().plusSeconds(31)) shouldBe true
-
-      // the retry also fails; lastRefreshAttemptAt is now bumped
-      cache.refreshOrCached().futureValue shouldBe NavigationData.empty
-
-      // should not immediately retry again — throttle resets from the failed attempt
-      cache.shouldRefreshForSearch() shouldBe false
-    }
-  }
-
-  "cachedMenu" should {
-    "return None before any successful refresh" in {
-      val connector = mock[CatalogueMenuConnector]
-      val cache     = makeCache(connector)
       cache.cachedMenu shouldBe None
+      cache.refreshSearch().futureValue shouldBe terms
+      cache.refreshOrCached().futureValue shouldBe NavigationData(menu, terms)
+      cache.refreshOrCached().futureValue shouldBe NavigationData(menu, terms)
+      cache.cachedMenu shouldBe Some(menu)
+      cache.shouldRefreshForSearch() shouldBe false
+      verify(connector, times(1)).getSearchIndex()(any[HeaderCarrier])
     }
 
-    "return the cached menu after a successful refresh" in {
+    "keep a newly loaded menu when a pending search refresh completes" in {
       val connector = mock[CatalogueMenuConnector]
-      when(connector.getNavigationData()(any[HeaderCarrier]))
-        .thenReturn(Future.successful(sampleNav))
-
+      val pending = Promise[Seq[SearchTerm]]()
+      when(connector.getSearchIndex()(any[HeaderCarrier])).thenReturn(pending.future)
+      when(connector.getMenu()(any[HeaderCarrier])).thenReturn(Future.successful(menu))
       val cache = makeCache(connector)
-      cache.refreshOrCached().futureValue
-      cache.cachedMenu shouldBe Some(sampleMenu)
-    }
-  }
 
-  "cachedSearchTerms" should {
-    "return empty before any successful refresh" in {
-      val connector = mock[CatalogueMenuConnector]
-      val cache     = makeCache(connector)
-      cache.cachedSearchTerms shouldBe Seq.empty
-    }
-
-    "return the cached search terms after a successful refresh" in {
-      val connector = mock[CatalogueMenuConnector]
-      when(connector.getNavigationData()(any[HeaderCarrier]))
-        .thenReturn(Future.successful(sampleNav))
-
-      val cache = makeCache(connector)
-      cache.refreshOrCached().futureValue
-      cache.cachedSearchTerms shouldBe sampleSearchTerms
+      cache.refreshOrCached().futureValue.menu shouldBe menu
+      val joined = cache.refreshSearch()
+      pending.success(terms)
+      joined.futureValue shouldBe terms
+      cache.cachedMenu shouldBe Some(menu)
+      cache.cachedSearchTerms shouldBe terms
     }
   }

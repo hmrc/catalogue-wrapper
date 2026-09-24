@@ -70,26 +70,26 @@ class QuickSearchControllerSpec extends AnyWordSpec with Matchers with MockitoSu
       status(result) shouldBe OK
       contentType(result) shouldBe Some("application/json")
       contentAsJson(result) shouldBe Json.toJson(results)
-      verify(mockNavCache, never()).refreshOrCached()(any[HeaderCarrier])
+      verify(mockNavCache, never()).refreshSearch()(any[HeaderCarrier])
     }
 
     "warm the cache via CatalogueNavigationCache when shouldRefreshForSearch is true" in {
       val results = Seq(SearchTerm("service", "foo-service", "/services/foo-service"))
       when(mockNavCache.shouldRefreshForSearch()).thenReturn(true)
-      when(mockNavCache.refreshOrCached()(any[HeaderCarrier]))
-        .thenReturn(Future.successful(sampleNav))
+      when(mockNavCache.refreshSearch()(any[HeaderCarrier]))
+        .thenReturn(Future.successful(sampleNav.searchIndex))
       when(mockSearchIndex.search(Seq("foo"))).thenReturn(results)
 
       val result = controller.search("foo", None)(FakeRequest())
       status(result) shouldBe OK
       contentAsJson(result) shouldBe Json.toJson(results)
-      verify(mockNavCache).refreshOrCached()(any[HeaderCarrier])
+      verify(mockNavCache).refreshSearch()(any[HeaderCarrier])
     }
 
     "return empty array when refresh falls back to empty navigation data" in {
       when(mockNavCache.shouldRefreshForSearch()).thenReturn(true)
-      when(mockNavCache.refreshOrCached()(any[HeaderCarrier]))
-        .thenReturn(Future.successful(NavigationData.empty))
+      when(mockNavCache.refreshSearch()(any[HeaderCarrier]))
+        .thenReturn(Future.successful(Seq.empty))
       when(mockSearchIndex.search(Seq("foo"))).thenReturn(Seq.empty)
 
       val result = controller.search("foo", None)(FakeRequest())

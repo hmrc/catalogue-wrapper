@@ -135,6 +135,7 @@
   const searchIcon = document.getElementById("searchicon");
   if (searchIcon) {
     searchIcon.addEventListener("click", function (e) {
+      e.preventDefault();
       e.stopImmediatePropagation();
       toggleSearch();
     }, true);

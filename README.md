@@ -18,7 +18,7 @@ Consuming services do **not** need to copy `search.js`, navbar CSS, or menu mode
 `catalogue-wrapper` is the **rendering** library.  
 `catalogue-config` is the **data** service (full navigation payload: menu structure and search index).
 
-The wrapper calls `catalogue-config` via HTTP for the full navigation payload — two separate calls made in parallel:
+The wrapper calls `catalogue-config` via HTTP for the full navigation payload — two endpoints, retaining the results in the navigation cache:
 
 ```text
 GET /catalogue-config/menu         → BannerMenu
@@ -29,9 +29,7 @@ These are combined internally into `NavigationData(menu, searchIndex)`. The wrap
 
 #### Partial backend failure behaviour
 
-Both requests start in parallel and are treated as one refresh operation. If either endpoint fails, the full refresh fails and the wrapper falls back to its existing cached `NavigationData`; on a cold cache it falls back to empty navigation data.
-
-This is expected to be acceptable because both endpoints are served by the same `catalogue-config` service, so one endpoint failing while the other succeeds should be unlikely. If that assumption proves wrong, the wrapper could be changed to support partial refreshes — for example using a fresh menu alongside the previously cached search index, or vice versa.
+Menu and search refresh independently within the existing navigation cache. If either refresh fails, its previously cached data is retained; without previous data, that part of the navigation is empty. The existing shared menu fallback behaviour is unchanged in this change.
 
 ## Internal Auth
 
@@ -99,10 +97,10 @@ In your service's `conf/app.routes` (or equivalent):
 ```
 
 This mounts:
-- `GET /catalogue-wrapper/quicksearch` — searches the wrapper's locally cached search index (no backend call per query)
+- `GET /catalogue-wrapper/quicksearch` — searches the wrapper's locally cached search index (refreshing only when due)
 - `GET /catalogue-wrapper/assets/*file` — serves wrapper CSS/JS assets
 
-On each page render, `CatalogueWrapperService` attempts to refresh the full navigation payload from `catalogue-config`. If that call fails after at least one prior successful refresh, the wrapper falls back to the cached menu and cached search index. If the backend has never succeeded, the wrapper renders with empty navigation data so the page still loads.
+Page renders fetch the menu and start any required search-index refresh in the background without waiting for the index. See Navigation cache below for expiry and fallback behaviour.
 
 ## Using `CatalogueWrapperService`
 
@@ -179,3 +177,14 @@ This publishes to your local Ivy2 cache. Consuming services can then reference t
 4. Replace local `BannerMenu`, `MenuLink`, `MenuDropdown`, `SearchTerm` imports with `uk.gov.hmrc.cataloguewrapper.models._`.
 5. Remove local `MenuBarConnector` and `QuickSearchController`.
 6. Use `CatalogueWrapperService.standardCatalogueLayout(...)` in your controllers.
+
+## Navigation cache
+
+The existing navigation cache retains menu and search data. Menus still refresh on every page request, with the existing cached fallback on failure. Session-specific menu caching is deferred.
+
+Search refreshes at most once an hour, including successful empty results. Concurrent requests share the pending refresh. Page rendering does not wait for search; a quicksearch request joins a required refresh before searching the local index. Failed refreshes retain the previous index and retry after 30 seconds. Refreshing the menu does not reset the search expiry or overwrite its data.
+
+Defaults (no consuming application changes required):
+
+    catalogue-wrapper.quick-search.cache-ttl = 1h
+    catalogue-wrapper.quick-search.refresh-throttle-seconds = 30
