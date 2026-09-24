@@ -149,7 +149,7 @@ th {
     font-weight: normal;
 }
 .search-width {
-    width: 35em;
+    width: min(35em, calc(100vw - 2rem));
 }
 
 .search-width-initial {

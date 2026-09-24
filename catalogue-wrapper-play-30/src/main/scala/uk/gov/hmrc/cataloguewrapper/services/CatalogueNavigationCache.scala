@@ -26,7 +26,9 @@ import uk.gov.hmrc.http.HeaderCarrier
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicReference
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.util.{Failure, Success, Try}
+import scala.util.control.NonFatal
 
 @Singleton
 class CatalogueNavigationCache @Inject() (
@@ -43,84 +45,62 @@ class CatalogueNavigationCache @Inject() (
       loadedFromBackend: Boolean
   )
 
-  private val cache =
-    new AtomicReference[Option[CacheEntry]](None)
+  private val cache = new AtomicReference[Option[CacheEntry]](None)
+  private var searchRefresh: Option[Future[Seq[SearchTerm]]] = None
+  private val emptyEntry = CacheEntry(NavigationData.empty, Instant.EPOCH, Instant.EPOCH, false)
 
   def refreshOrCached()(implicit hc: HeaderCarrier): Future[NavigationData] =
-    connector
-      .getNavigationData()
-      .map { fresh =>
-        updateCache(fresh, loadedFromBackend = true)
-        fresh
-      }
-      .recover { case error =>
-        cache.get() match
-          case Some(entry) =>
-            logger.warn(
-              "Using cached catalogue navigation data because catalogue-navigation is unavailable",
-              error
-            )
-            recordRefreshAttempt()
-            entry.data
+    refreshSearch()
+    connector.getMenu().map { menu =>
+      cache.updateAndGet { current =>
+        val entry = current.getOrElse(emptyEntry)
+        Some(entry.copy(data = entry.data.copy(menu = menu)))
+      }.get.data
+    }.recover { case NonFatal(error) =>
+      logger.warn("Using cached catalogue menu because catalogue-config is unavailable", error)
+      cache.get().map(_.data).getOrElse(NavigationData.empty)
+    }
 
-          case None =>
-            logger.warn(
-              "No cached catalogue navigation data is available; using empty catalogue navigation data",
-              error
-            )
-            updateCache(NavigationData.empty, loadedFromBackend = false)
-            NavigationData.empty
-      }
+  def refreshSearch()(implicit hc: HeaderCarrier): Future[Seq[SearchTerm]] = synchronized {
+    searchRefresh match
+      case Some(pending) => pending
+      case None if !shouldRefreshForSearch() => Future.successful(cachedSearchTerms)
+      case None =>
+        val promise = Promise[Seq[SearchTerm]]()
+        searchRefresh = Some(promise.future)
+        Try(connector.getSearchIndex()).fold(Future.failed, identity).onComplete { result =>
+          synchronized {
+            val now = Instant.now()
+            result match
+              case Success(terms) =>
+                searchIndex.replaceAll(terms)
+                cache.updateAndGet { current =>
+                  val entry = current.getOrElse(emptyEntry)
+                  Some(entry.copy(data = entry.data.copy(searchIndex = terms),
+                    dataUpdatedAt = now, lastRefreshAttemptAt = now, loadedFromBackend = true))
+                }
+              case Failure(error) =>
+                logger.warn("Using cached catalogue search index because catalogue-config is unavailable", error)
+                cache.updateAndGet { current =>
+                  Some(current.getOrElse(emptyEntry).copy(lastRefreshAttemptAt = now))
+                }
+            searchRefresh = None
+            promise.success(cachedSearchTerms)
+          }
+        }
+        promise.future
+  }
 
-  /** Returns true when the controller should attempt a backend refresh before serving a quicksearch result.
-    *
-    * False (no refresh needed) when:
-    *   - The cache was loaded from the backend and contains a non-empty search index.
-    *
-    * True (refresh allowed) when:
-    *   - The cache is empty (cold pod).
-    *   - The cache holds fallback/empty-search data and the throttle interval has elapsed since the last refresh
-    *     attempt.
-    */
-  def shouldRefreshForSearch(): Boolean =
-    shouldRefreshForSearch(Instant.now())
+  def shouldRefreshForSearch(): Boolean = shouldRefreshForSearch(Instant.now())
 
   def shouldRefreshForSearch(now: Instant): Boolean =
     cache.get() match
-      case None =>
-        true
-
-      case Some(entry) if entry.loadedFromBackend && entry.data.searchIndex.nonEmpty =>
-        false
-
+      case None => true
       case Some(entry) =>
-        val nextAllowedRefresh =
-          entry.lastRefreshAttemptAt.plusSeconds(config.quickSearchRefreshThrottleSeconds)
-        !now.isBefore(nextAllowedRefresh)
+        val fresh = entry.loadedFromBackend && now.isBefore(entry.dataUpdatedAt.plus(config.searchCacheTtl))
+        val retryAllowed = !now.isBefore(entry.lastRefreshAttemptAt.plusSeconds(config.quickSearchRefreshThrottleSeconds))
+        !fresh && retryAllowed
 
-  def cachedMenu: Option[BannerMenu] =
-    cache.get().map(_.data.menu)
+  def cachedMenu: Option[BannerMenu] = cache.get().map(_.data.menu)
 
-  def cachedSearchTerms: Seq[SearchTerm] =
-    cache.get().map(_.data.searchIndex).getOrElse(Seq.empty)
-
-  private def updateCache(data: NavigationData, loadedFromBackend: Boolean): Unit =
-    val now = Instant.now()
-    cache.set(
-      Some(
-        CacheEntry(
-          data = data,
-          dataUpdatedAt = now,
-          lastRefreshAttemptAt = now,
-          loadedFromBackend = loadedFromBackend
-        )
-      )
-    )
-    searchIndex.replaceAll(data.searchIndex)
-
-  private def recordRefreshAttempt(): Unit =
-    val current = cache.get()
-    cache.compareAndSet(
-      current,
-      current.map(_.copy(lastRefreshAttemptAt = Instant.now()))
-    )
+  def cachedSearchTerms: Seq[SearchTerm] = cache.get().map(_.data.searchIndex).getOrElse(Seq.empty)

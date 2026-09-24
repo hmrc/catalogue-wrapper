@@ -45,12 +45,12 @@ class CatalogueMenuConnector @Inject() (
         NavigationData(menu = menu, searchIndex = searchIndex)
       }
 
-  private def getMenu()(implicit hc: HeaderCarrier): Future[BannerMenu] =
+  def getMenu()(implicit hc: HeaderCarrier): Future[BannerMenu] =
     httpClient
       .get(url"${config.menuBarBaseUrl}/catalogue-config/menu")
       .execute[BannerMenu]
 
-  private def getSearchIndex()(implicit hc: HeaderCarrier): Future[Seq[SearchTerm]] =
+  def getSearchIndex()(implicit hc: HeaderCarrier): Future[Seq[SearchTerm]] =
     httpClient
       .get(url"${config.menuBarBaseUrl}/catalogue-config/search-index")
       .execute[Seq[SearchTerm]]
