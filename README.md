@@ -120,8 +120,7 @@ class IndexController @Inject()(
       catalogueWrapperService.standardCatalogueLayout(
         content      = pageView(myViewModel),
         pageTitle    = Some("My Service"),
-        activeItemId = Some("my-service-nav-id"),
-        signOutUrl   = Some(controllers.auth.routes.AuthController.signOutNoSurvey().url)
+        activeItemId = Some("my-service-nav-id")
       ).map(Ok(_))
     }
 ```

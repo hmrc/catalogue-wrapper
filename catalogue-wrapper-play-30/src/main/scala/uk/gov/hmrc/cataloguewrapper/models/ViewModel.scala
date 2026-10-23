@@ -20,7 +20,8 @@ import play.api.libs.json.{Format, Json}
 
 case class ViewModel(
     brand: MenuLink,
-    topLevelLinks: Seq[MenuLinkViewModel]
+    topLevelLinks: Seq[MenuLinkViewModel],
+    accountMenu: Option[AccountMenu] = None
 )
 
 object ViewModel {
@@ -29,6 +30,7 @@ object ViewModel {
   def from(menu: BannerMenu, activeItemId: Option[String] = None): ViewModel =
     ViewModel(
       brand = menu.brand,
+      accountMenu = menu.accountMenu,
       topLevelLinks = menu.topLevelLinks.map { link =>
         val dropdown = menu.dropdowns.find(_.id == link.id)
 

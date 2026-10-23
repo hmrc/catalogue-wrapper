@@ -22,8 +22,7 @@ menu: ViewModel,
 activeItemId: Option[String] = None,
 quickSearchUrl: String,
 minSearchLen: Int,
-showSignOut: Boolean = true,
-signOutUrl: Option[String] = None
+showSignOut: Boolean = true
 )(implicit request: RequestHeader, messages: Messages)
 
 @renderDropdownItems(dropdown: MenuDropdown) = {
@@ -145,13 +144,34 @@ signOutUrl: Option[String] = None
             </svg>
           </a>
         </li>
-        @if(showSignOut) {
-        <li class="nav-item">
-          <a class="nav-link" href="@signOutUrl.getOrElse("#")">
-            Sign out
-          </a>
-        </li>
+        @request.session.get("username") match {
+        case Some(username) => {
+          <li class="nav-item dropdown">
+            <a id="logged-in-user" class="nav-link dropdown-toggle" href="#" role="button"
+               data-bs-toggle="dropdown" aria-expanded="false">
+              @if(username.startsWith("guest-")) {Guest} else {@username}
+            </a>
+            <ul class="dropdown-menu">
+              @for(account <- menu.accountMenu; url <- account.profile.href) {
+                <li><a id="profile" class="dropdown-item"
+                       href="@url.replace("{username}", java.net.URLEncoder.encode(username, "UTF-8").replace("+", "%20"))">@account.profile.name</a></li>
+              }
+              @if(showSignOut) {
+                @for(url <- menu.accountMenu.flatMap(_.signOut.href)) {
+                  <li><a id="sign-out" class="dropdown-item" href="@url">Sign out</a></li>
+                }
+              }
+            </ul>
+          </li>
         }
+        case None => {
+          @for(account <- menu.accountMenu; url <- account.signIn.href) {
+            <li class="nav-item">
+              <a id="sign-in" class="nav-link" href="@url">@account.signIn.name</a>
+            </li>
+          }
+        }
+      }
       </ul>
     </div>
   </div>

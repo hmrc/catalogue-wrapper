@@ -41,7 +41,6 @@ class CatalogueWrapperService @Inject() (
       pageTitle: Option[String] = None,
       activeItemId: Option[String] = None,
       showSignOut: Boolean = true,
-      signOutUrl: Option[String] = None,
       scripts: Seq[HtmlFormat.Appendable] = Seq.empty,
       stylesheets: Seq[HtmlFormat.Appendable] = Seq.empty,
       fullWidth: Boolean = true
@@ -59,7 +58,6 @@ class CatalogueWrapperService @Inject() (
         quickSearchUrl = config.quickSearchPath,
         minSearchLen = config.quickSearchMinTermLength,
         showSignOut = showSignOut,
-        signOutUrl = signOutUrl,
         scripts = scripts,
         stylesheets = stylesheets,
         fullWidth = fullWidth
@@ -73,7 +71,6 @@ class CatalogueWrapperService @Inject() (
       pageTitle: Option[String] = None,
       activeItemId: Option[String] = None,
       showSignOut: Boolean = true,
-      signOutUrl: Option[String] = None,
       scripts: Seq[HtmlFormat.Appendable] = Seq.empty,
       stylesheets: Seq[HtmlFormat.Appendable] = Seq.empty,
       fullWidth: Boolean = true
@@ -89,7 +86,6 @@ class CatalogueWrapperService @Inject() (
       quickSearchUrl = config.quickSearchPath,
       minSearchLen = config.quickSearchMinTermLength,
       showSignOut = showSignOut,
-      signOutUrl = signOutUrl,
       scripts = scripts,
       stylesheets = stylesheets,
       fullWidth = fullWidth
@@ -100,8 +96,7 @@ class CatalogueWrapperService @Inject() (
     */
   def catalogueMenuBar(
       activeItemId: Option[String] = None,
-      showSignOut: Boolean = true,
-      signOutUrl: Option[String] = None
+      showSignOut: Boolean = true
   )(implicit
       hc: HeaderCarrier,
       request: RequestHeader,
@@ -113,8 +108,7 @@ class CatalogueWrapperService @Inject() (
         activeItemId = activeItemId,
         quickSearchUrl = config.quickSearchPath,
         minSearchLen = config.quickSearchMinTermLength,
-        showSignOut = showSignOut,
-        signOutUrl = signOutUrl
+        showSignOut = showSignOut
       )
     }
 
@@ -125,8 +119,7 @@ class CatalogueWrapperService @Inject() (
   def catalogueMenuBarWithMenu(
       menu: BannerMenu,
       activeItemId: Option[String] = None,
-      showSignOut: Boolean = true,
-      signOutUrl: Option[String] = None
+      showSignOut: Boolean = true
   )(implicit
       request: RequestHeader,
       messages: Messages
@@ -136,6 +129,5 @@ class CatalogueWrapperService @Inject() (
       activeItemId = activeItemId,
       quickSearchUrl = config.quickSearchPath,
       minSearchLen = config.quickSearchMinTermLength,
-      showSignOut = showSignOut,
-      signOutUrl = signOutUrl
+      showSignOut = showSignOut
     )

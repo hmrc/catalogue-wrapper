@@ -18,25 +18,20 @@ package uk.gov.hmrc.cataloguewrapper.models
 
 import play.api.libs.json.*
 
-sealed abstract class Role(val roleIdentifier: String)
+enum Role(val roleIdentifier: String):
+  case CanCreate      extends Role("CAN_CREATE_USERS")
+  case CanManageUsers extends Role("CAN_MANAGE_USERS")
 
 object Role:
-  case object CanCreate      extends Role("CAN_CREATE_USERS")
-  case object CanManageUsers extends Role("CAN_MANAGE_USERS")
-
-  val values: List[Role] =
-    List(CanCreate, CanManageUsers)
-
   private val byIdentifier: Map[String, Role] =
-    values.map(r => r.roleIdentifier -> r).toMap
+    Role.values.map(r => r.roleIdentifier -> r).toMap
 
   given Format[Role] with
     override def writes(o: Role): JsValue =
       JsString(o.roleIdentifier)
 
     override def reads(json: JsValue): JsResult[Role] =
-      json.validate[String].flatMap { identifier =>
+      json.validate[String].flatMap: identifier =>
         byIdentifier.get(identifier) match
           case Some(role) => JsSuccess(role)
           case None       => JsError(s"Unknown Role identifier: $identifier")
-      }

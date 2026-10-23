@@ -17,7 +17,7 @@
 package uk.gov.hmrc.cataloguewrapper.models
 import play.api.libs.json.{Format, Json, JsonConfiguration, JsonNaming}
 
-sealed trait MenuLink {
+sealed trait MenuLink:
   def name: String
 
   def id: String
@@ -25,7 +25,6 @@ sealed trait MenuLink {
   def href: Option[String]
 
   def external: Boolean
-}
 
 object MenuLink:
   given JsonConfiguration        = JsonConfiguration(
@@ -48,9 +47,10 @@ case object DropdownSeparator extends DropdownItem:
   override def isSeparator: Boolean            = true
 
 final case class BannerMenu(
-    brand: MenuLink,
-    topLevelLinks: Seq[MenuLink],
-    dropdowns: Seq[MenuDropdown]
+  brand: MenuLink,
+  topLevelLinks: Seq[MenuLink],
+  dropdowns: Seq[MenuDropdown],
+  accountMenu: Option[AccountMenu] = None
 )
 
 object BannerMenu:
@@ -64,6 +64,16 @@ object BannerMenu:
       dropdowns = Seq.empty
     )
 
+final case class AccountMenu(
+  profile: Page,
+  signIn : Page,
+  signOut: Page
+)
+
+object AccountMenu:
+  given format: Format[AccountMenu] =
+    Json.format[AccountMenu]
+
 final case class MenuDropdown(
     id: String,
     name: String,
@@ -72,10 +82,9 @@ final case class MenuDropdown(
     dropDownRole: Seq[Role] = Nil
 )
 
-object MenuDropdown {
+object MenuDropdown:
   given format: Format[MenuDropdown] =
     Json.format[MenuDropdown]
-}
 
 final case class TopMenu(
     name: String,

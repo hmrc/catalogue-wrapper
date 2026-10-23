@@ -26,7 +26,7 @@ import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
 import uk.gov.hmrc.cataloguewrapper.config.CatalogueWrapperConfig
-import uk.gov.hmrc.cataloguewrapper.models.{BannerMenu, MenuLink, NavigationData, SearchTerm, TopMenu}
+import uk.gov.hmrc.cataloguewrapper.models.{BannerMenu, NavigationData, SearchTerm, TopMenu}
 import uk.gov.hmrc.cataloguewrapper.search.SearchIndex
 import uk.gov.hmrc.cataloguewrapper.services.CatalogueNavigationCache
 import uk.gov.hmrc.http.HeaderCarrier
