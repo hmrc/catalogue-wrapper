@@ -29,7 +29,6 @@
     quickSearchUrl: String,
     minSearchLen: Int,
     showSignOut: Boolean = true,
-    signOutUrl: Option[String] = None,
     scripts: Seq[play.twirl.api.HtmlFormat.Appendable] = Seq.empty,
     stylesheets: Seq[play.twirl.api.HtmlFormat.Appendable] = Seq.empty,
     fullWidth: Boolean = true
@@ -49,7 +48,7 @@
     }
   </head>
   <body>
-    @uk.gov.hmrc.cataloguewrapper.views.html.CatalogueMenuBar(viewModel, activeItemId, quickSearchUrl, minSearchLen, showSignOut, signOutUrl)
+    @uk.gov.hmrc.cataloguewrapper.views.html.CatalogueMenuBar(viewModel, activeItemId, quickSearchUrl, minSearchLen, showSignOut)
     <main>
       <div id="standard-layout-container">
         <section class="@containerClass mt-4">

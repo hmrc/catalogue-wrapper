@@ -19,7 +19,7 @@ import sbt.Keys.*
 
 val libName = "catalogue-wrapper"
 
-ThisBuild / scalaVersion      := "3.3.7"
+ThisBuild / scalaVersion      := "3.3.8"
 ThisBuild / majorVersion      := 0
 ThisBuild / isPublicArtefact  := true
 ThisBuild / organization      := "uk.gov.hmrc"
